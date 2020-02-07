@@ -4,7 +4,7 @@ INitial InTegral ALgorithm: A package for obtaining the transformation matrix to
 
 This Mathematica package is based on the following publication:
 
-* Christoph Dlapa, Johannes Henn and Kai Yan, _Deriving canonical differential equations for Feynman integrals from a single uniform weight integral_, [arxiv:2002:xxxxx](https://arxiv.org/)
+* Christoph Dlapa, Johannes Henn and Kai Yan, _Deriving canonical differential equations for Feynman integrals from a single uniform weight integral_, [arxiv:2002.02340](https://arxiv.org/abs/2002.02340)
 
 
 ## Installation
