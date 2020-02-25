@@ -12,3 +12,7 @@ This Mathematica package is based on the following publication:
 Written completely in Mathematica, this package requires no installation other than its dependencies:
 
 This package relies on the [FiniteFlow](https://github.com/peraro/finiteflow) framework (see [arXiv:1905.08019](https://arxiv.org/abs/1905.08019) for more information).
+
+## FAQ
+
+An [FAQ](https://github.com/UT-team/INITIAL/blob/master/FAQ.md) file collects frequently asked questions and should help in dealing with the most common problems.
