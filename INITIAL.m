@@ -1213,6 +1213,10 @@ If[Qtest===ts,Break[],Print["Error in variables."];Throw[Return[$Failed]]]
 If[print,Print["Number of relations missing: ",Length[Qtest]-sz]];
 ];
 ];
+If[epsor===maxit,
+Print["No solution found after ",maxit " iterations, returning partial solution"];
+Throw[Return[sol1]];
+];
 ,
 {epsor,startit,maxit}];
 ];
@@ -1478,6 +1482,7 @@ If[degs[[1]]<1,Print["b-tilde[0](0) not vanishing. Try a different normalization
 If[print,Print["Calculating solution."]];
 sol1=solCalc[psi1,letters,degs,Sequence@@FilterRules[opt,Options[solCalc]]];
 If[sol1===$Failed,Return[$Failed]];
+If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,Return[sol1]];
 
 If[print,Print["Calculating full phi-matrix."]];
 bmatrix=BCalc[sol1,letters,Sequence@@FilterRules[opt,Options[BCalc]]];
