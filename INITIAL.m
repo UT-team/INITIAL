@@ -11,15 +11,15 @@ BeginPackage["INITIAL`",{"FiniteFlow`"}];
 (* ::Input::Initialization:: *)
 (*Print["Package for obtaining the transformation matrix to canonical basis"]
 Print["Author: Christoph Dlapa and Kai Yan"];
-Print["Version: 1.0"];
-Print["Last changes: 05.02.2020"];*)
+Print["Version: 1.1dev"];
+Print["Last changes: 12.03.2020"];*)
 
 
 (* ::Input:: *)
 (*SetOptions[EvaluationNotebook[],ShowGroupOpener->True]*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Descriptions*)
 
 
@@ -62,7 +62,7 @@ FFphiStep[B[1],{v0.B[i-1](j-1),v0.B[i-1](j)},{TVariables[i-1](j-1),TVariables[i-
 
 (* ::Input::Initialization:: *)
 phiCalc::usage="\
-phiCalc[letters,phi(j-1),TVariables,sol] calculates the next order eps^j of the phi-matrix from an ansatz based on \"letters\" and the previous order \"phi(j-1)\". A previous found solution is taken into account through the substitution rules in \"sol\".";
+phiCalc[letters,phi(j-1),TVariables,sol] calculates the next order eps^j of the phi-matrix from an ansatz based on \"letters\" and the previous order \"phi(j-1)\". A previous found solution is taken into account through the substitution rules in \"sol\". If \"AnsatzFunctions\" is provided, then the input for \"letters\" is ignored.";
 
 
 (* ::Input::Initialization:: *)
@@ -87,7 +87,7 @@ equStep[psi,phi,epsOrder,TVariables,degrees] computes the equation at order \"ep
 
 (* ::Input::Initialization:: *)
 solCalc::usage="\
-solCalc[psi,letters,degrees] recursively tries to calculate a solution to the equation from an ansatz based on \"letters\". If no solution is found, a partial solution for the T-variables may be returned.";
+solCalc[psi,letters,degrees] recursively tries to calculate a solution to the equation from an ansatz based on \"letters\". If no solution is found, a partial solution for the T-variables may be returned. If \"AnsatzFunctions\" is provided, then the input for \"letters\" is ignored.";
 
 
 (* ::Input::Initialization:: *)
@@ -103,12 +103,12 @@ basisChange[AMatrix,TMatrix] uses FiniteFlow to compute the basis change given t
 
 (* ::Input::Initialization:: *)
 BCalc::usage="\
-BCalc[sol,letters] computes the BMatrix from the \"letters\" and the solution \"sol\" given by solCalc."
+BCalc[sol,letters] computes the BMatrix from the \"letters\" and the solution \"sol\" given by solCalc. If \"AnsatzFunctions\" is provided, then the input for \"letters\" is ignored."
 
 
 (* ::Input::Initialization:: *)
 TCalc::usage="\
-TCalc[AMatrix] uses FiniteFlow to compute the basis change of the differential equation given through \"AMatrix\" to a canonical basis. It is recommended to use the options \"Letters\" and \"Variables\" where the latter should be in the form {eps,x,...}, i.e. the variable of dimensional regularization should come first, the differentiation variable second and the rest of the kinematic variables should follow, if not set to numbers."
+TCalc[AMatrix] uses FiniteFlow to compute the basis change of the differential equation given through \"AMatrix\" to a canonical basis. It is recommended to use the options \"Letters\" and \"Variables\" where the latter should be in the form {eps,x,...}, i.e. the variable of dimensional regularization should come first, the differentiation variable second and the rest of the kinematic variables should follow, if not set to numbers. Instead of \"Letters\" one can also directly provide the dlogs through \"AnsatzFunctions\"."
 
 
 (* ::Input::Initialization:: *)
@@ -538,22 +538,27 @@ FFAlgRatNumEval[phiGraph,muloutNode,{}]];
 varsTd[1]];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.2.3 phiCalc*)
 
 
 (* ::Input::Initialization:: *)
-Options[phiCalc]:=Options[psiCalc];
-phiCalc[letters_,phim1_,varsIn_,sol1_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,xv,eps,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars},
+Options[phiCalc]:=Join[Options[psiCalc],{"AnsatzFunctions"->Automatic}];
+phiCalc[letters_,phim1_,varsIn_,sol1_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,xv,eps,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars,ansatzF},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[phiCalc];
 
 time=SessionTime[];
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Join[{Global`eps},Variables[letters]]];
+ansatzF=OptionValue["AnsatzFunctions"];
+If[ansatzF===Automatic,
+ansatzF=letters];
+If[graphvars===Automatic,graphvars=Join[{Global`eps},Variables[ansatzF]]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 eps=graphvars[[1]];
 xv=graphvars[[2]];
 print=!OptionValue["Silent"];
+If[OptionValue["AnsatzFunctions"]===Automatic,
+ansatzF=D[Log[#],xv]&/@ansatzF];
 
 {sz,epsor}=Dimensions[phim1][[1;;2]];
 
@@ -578,7 +583,7 @@ vars[[1]]={{T[v0]}};
 
 Do[Bco[i]={0};varsTd[i]={},{i,epsor}];
 
-startB=Table[eps Together[D[Log[letters[[k]]],xv]],{k,Length[letters]}];
+startB=Table[eps Together[ansatzF[[k]]],{k,Length[ansatzF]}];
 Catch[
 If[print,
 Monitor[
@@ -1137,9 +1142,12 @@ equs];
 (* ::Input::Initialization:: *)
 Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
 solCalc[psi1_,letters_,degs_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
-phi2,opt,print,time,a,ts,Qtest,Tvars},
+phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
+ansatzF=OptionValue["AnsatzFunctions"];
+If[ansatzF===Automatic,
+ansatzF=letters];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
@@ -1205,7 +1213,7 @@ ts=Union[Cases[sol1[[All,2]],T[__],\[Infinity]]][[All,1;;-2]];
 If[print,Print["Number of independent variables found so far: ",Length[ts]]];
 
 If[Length[ts]===sz,
-Qtest=Table[Append[#,m[i]],{i,Length[letters]}]&/@ts//.sol1;
+Qtest=Table[Append[#,m[i]],{i,Length[ansatzF]}]&/@ts//.sol1;
 Qtest=Union[Cases[Qtest,T[__],\[Infinity]]];
 If[Length[Qtest]===sz,
 If[Qtest===ts,Break[],Print["Error in variables."];Throw[Return[$Failed]]]
@@ -1393,20 +1401,25 @@ atest];
 
 
 (* ::Input::Initialization:: *)
-Options[BCalc]:={"Silent"->False,"Variables"->Automatic};
-BCalc[sol1_,letters_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,sz,graphvars,eps,x},
+Options[BCalc]:={"Silent"->False,"Variables"->Automatic,"AnsatzFunctions"->Automatic};
+BCalc[sol1_,letters_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,sz,graphvars,eps,x,ansatzF},
 
+ansatzF=OptionValue["AnsatzFunctions"];
+If[ansatzF===Automatic,
+ansatzF=letters];
 print=!OptionValue["Silent"];
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Join[{Global`eps},Variables[letters]]];
+If[graphvars===Automatic,graphvars=Join[{Global`eps},Variables[ansatzF]]];
 eps=graphvars[[1]];
 x=graphvars[[2]];
+If[OptionValue["AnsatzFunctions"]===Automatic,
+ansatzF=D[Log[#],x]&/@ansatzF];
 
 ts=Cases[sol1[[All,2]],T[__],\[Infinity]]//Union;
 ts=ts[[All,1;;-2]];
 sz=Length[ts];
 
-Qtest=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[letters]}];
+Qtest=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 QtestTs=Union[Cases[Qtest,T[__],\[Infinity]]];
 
 If[(!(Length[QtestTs]===sz))||(sz===0),
@@ -1422,21 +1435,21 @@ If[Length[temp]===1,
 If[print,Print["Result is independent of letter ",i]];
 ConstantArray[0,{sz,sz}],
 temp[[2]]],
-{i,Length[letters]}];
+{i,Length[ansatzF]}];
 
 If[print,Print["Building B-matrix."]];
-bmatrix=Sum[Together[D[eps Log[letters[[i]]],x]]ms[[i]],{i,Length[letters]}]//Together;
+bmatrix=Sum[Together[eps ansatzF[[i]]]ms[[i]],{i,Length[ansatzF]}]//Together;
 
 bmatrix];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.6.2 TCalc*)
 
 
 (* ::Input::Initialization:: *)
 Options[TCalc]:=DeleteCases[Join[{"Letters"->Automatic},Options[checkDegrees],Options[solCalc],Options[FFInvMatMul]]//DeleteDuplicates,"InvertInput"->_];
-TCalc[Am_,OptionsPattern[]]:=Module[{graphvars,letters,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax},
+TCalc[Am_,OptionsPattern[]]:=Module[{graphvars,letters,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax,ansatzF},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[TCalc];
 print=!OptionValue["Silent"];
 
@@ -1450,6 +1463,8 @@ If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 If[print,Print["Variables: ",graphvars]];
 
 letters=OptionValue["Letters"];
+ansatzF=OptionValue["AnsatzFunctions"];
+If[ansatzF===Automatic,
 If[letters===Automatic,
 If[print,Print["No letters given. Using the following letters:"]];
 letters=FactorList/@(Denominator/@Flatten[Am]);
@@ -1458,6 +1473,9 @@ letters=Select[letters,FreeQ[{#},graphvars[[1]],\[Infinity]]&&MemberQ[{#},Altern
 If[print,Print[letters]];
 ,
 If[print,Print["Letters: ",letters]];
+];
+,
+If[print,Print["AnsatzFunctions: ",ansatzF]];
 ];
 
 sz=Length[Am];
