@@ -19,7 +19,7 @@ Print["Last changes: 12.03.2020"];*)
 (*SetOptions[EvaluationNotebook[],ShowGroupOpener->True]*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Descriptions*)
 
 
@@ -939,7 +939,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -1135,7 +1135,7 @@ equs];
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.2 Solve the Equation*)
 
 
@@ -1177,8 +1177,10 @@ If[phi1===$Failed,Throw[Return[$Failed]]];
 If[print,Print["Calculating the equation."]];
 equ=equStep[psi1,phi1,epsor,allVars,degs,Sequence@@FilterRules[opt,Options[equStep]]];
 If[equ===$Failed,Throw[Return[$Failed]]];
-
 equs=CoefficientList[equ,graphvars]//Flatten//Union;
+(*new, need to test: apply old solution to equations*)
+equs=Collect[equs//.oldsol,T[__],Together];
+
 equs=DeleteCases[equs,0];
 If[equs==={},Continue[]];
 
