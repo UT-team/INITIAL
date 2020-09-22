@@ -538,7 +538,7 @@ FFAlgRatNumEval[phiGraph,muloutNode,{}]];
 varsTd[1]];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.2.3 phiCalc*)
 
 
@@ -939,7 +939,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -1101,7 +1101,7 @@ nulltest=!AllTrue[nulltest,(#===0&)];
 ];
 
 For[i=1,nulltest&&(i<OptionValue["MaxPrimes"]),i++,
-Print["Calculating prime number ",i+1];
+If[print,Print["Calculating prime number ",i+1]];
 
 testpointsnew=Transpose[Join[Transpose[testpoints],{Join[{i+1},ConstantArray[i,rank]]}]];
 matrixnew=FFGraphEvaluateMany[LaurentGraph,testpointsnew,
