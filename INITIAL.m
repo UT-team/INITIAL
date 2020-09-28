@@ -1143,7 +1143,7 @@ equs];
 Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
 solCalc[psi1_,letters_,degs_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
 phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF,
-extracheck},
+extracheck,checksol},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
 ansatzF=OptionValue["AnsatzFunctions"];
@@ -1209,7 +1209,10 @@ FullForm]\)];
 sol1[[All,2]]=sol1[[All,2]]/.T[b__]->T[b,a];
 sol1=Rule@@@sol1;
 sol1=Join[oldsol,sol1];
+checksol=sol1;
+Quiet[Check[
 sol1[[All,2]]=sol1[[All,2]]//.sol1;
+,Throw[Return[$Failed]]]];
 sol1=sol1//Union;
 oldsol=sol1;
 
