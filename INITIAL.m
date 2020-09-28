@@ -1140,9 +1140,10 @@ equs];
 
 
 (* ::Input::Initialization:: *)
-Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
+Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
 solCalc[psi1_,letters_,degs_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
-phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF},
+phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF,
+extracheck},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
 ansatzF=OptionValue["AnsatzFunctions"];
@@ -1155,6 +1156,7 @@ If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
 
 print=!OptionValue["Silent"];
+extracheck=OptionValue["ExtraCheck"];
 time=SessionTime[];
 sz=Length[psi1];
 startit=OptionValue["StartIterations"];
@@ -1218,7 +1220,11 @@ If[Length[ts]===sz,
 Qtest=Table[Append[#,m[i]],{i,Length[ansatzF]}]&/@ts//.sol1;
 Qtest=Union[Cases[Qtest,T[__],\[Infinity]]];
 If[Length[Qtest]===sz,
-If[Qtest===ts,Break[],Print["Error in variables."];Throw[Return[$Failed]]]
+If[Qtest===ts,
+If[(extracheck===False)||(extracheck===(epsor-1)),
+Break[],
+extracheck=epsor],
+Print["Error in variables."];Throw[Return[$Failed]]]
 ,
 If[print,Print["Number of relations missing: ",Length[Qtest]-sz]];
 ];
