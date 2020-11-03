@@ -242,6 +242,14 @@ Options[psiCalc]:=Join[{"Silent"->False,"FiniteFlow"->False,"MaxDerivatives"->Au
 psiCalc[Am_,OptionsPattern[]]:=Module[{Aco,sz,psi1,time,xv,graphvars,i,opt,printQ,FFQ,nthreads,tr},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[psiCalc];
 
+tr=OptionValue["TakeRow"];
+If[Head[tr]===List,
+psi1=Join@@Table[
+psiCalc[Am,Sequence@@DeleteCases[opt,("TakeRow"->_)|("MaxDerivatives"->_)],"TakeRow"->tr[[i,1]],"MaxDerivatives"->tr[[i,2]]]
+,{i,Length[tr]}];
+Return[psi1];
+];
+
 (*Checking things*)
 printQ=!OptionValue["Silent"];
 If[!SquareMatrixQ[Am],Message[nthO::badmatrix1];Return[$Failed]];
@@ -253,7 +261,6 @@ graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[Am]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 xv=graphvars[[2]];
-tr=OptionValue["TakeRow"];
 
 nthreads=OptionValue["NThreads"];
 If[nthreads===Automatic,nthreads=FFAutomaticNThreads[]];
@@ -1151,15 +1158,15 @@ equs];
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.2 Solve the Equation*)
 
 
 (* ::Input::Initialization:: *)
-Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
-solCalc[psi1_,letters_,degs_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
+Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False,"TakeRow"->1},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
+solCalc[psi1_,letters_,degsIn_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
 phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF,
-extracheck,checksol,oldsolequs},
+extracheck,checksol,oldsolequs,tr,phi1temp,allVarstemp,i,equtemp,equstemp,degs,phiold,allVarsold},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
 ansatzF=OptionValue["AnsatzFunctions"];
@@ -1180,29 +1187,56 @@ maxit=OptionValue["MaxIterations"];
 (*initialize loop*)
 oldsol={};
 ts={};
-allVars=phi1=Table[{},sz];
+
+tr=OptionValue["TakeRow"];
+If[Head[tr]=!=List,
+tr={{tr,sz}}];
+degs=degsIn;
+If[Head[degs[[1]]]===Integer,
+degs={degs}];
+
+allVarsold=phiold=Table[{},Length[tr],sz];
 
 Catch[
 Do[If[print,Print["Starting epsilon order ",epsor]];
 
 (*calculate step-by-step the phi-matrix, build the equation system and solve it*)
+
 If[print,Print["Calculating phi."]];
-phi1=phiCalc[letters,phi1,allVars,oldsol,Sequence@@FilterRules[opt,Options[phiCalc]]];
-If[phi1===$Failed,Throw[Return[$Failed]]];
-{phi1,allVars}=phi1;
+phi1={};
+allVars={};
+
+Do[
+phi1temp=phiCalc[letters,phiold[[i]],allVarsold[[i]],oldsol,Sequence@@DeleteCases[FilterRules[opt,Options[phiCalc]],("TakeRow"->_)|("MaxDerivatives"->_)],"TakeRow"->tr[[i,1]],"MaxDerivatives"->tr[[i,2]]];
+If[phi1temp===$Failed,Throw[Return[$Failed]]];
+{phi1temp,allVarstemp}=phi1temp;
+phi1=Append[phi1,phi1temp];
+allVars=Append[allVars,allVarstemp];
+,{i,Length[tr]}];
 (*Print[{allVars,oldsol}];*)
+phiold=phi1;
+allVarsold=allVars;
+phi1=Join@@phi1;
+allVars=Join@@allVars;
 
 If[print,Print["Calculating the equation."]];
-equ=equStep[psi1,phi1,epsor,allVars,degs,Sequence@@FilterRules[opt,Options[equStep]]];
-If[equ===$Failed,Throw[Return[$Failed]]];
-equs=CoefficientList[equ,graphvars]//Flatten//Union;
+equ={};
+equs={};
+Do[
+equtemp=equStep[psi1,phi1,epsor,allVars,degs[[i]],Sequence@@DeleteCases[FilterRules[opt,Options[equStep]],("TakeRow"->_)|("MaxDerivatives"->_)],"TakeRow"->tr[[i,1]]];
+If[equtemp===$Failed,Throw[Return[$Failed]]];
+equstemp=CoefficientList[equtemp,graphvars]//Flatten//Union;
 (*new, need to test: apply old solution to equations*)
-equs=Collect[equs//.oldsol,T[__],Together];
+equstemp=Collect[equstemp//.oldsol,T[__],Together];
+equ=Join[equ,equtemp];
+equs=Join[equs,equstemp];
+,{i,Length[tr]}];
 
 equs=DeleteCases[equs,0];
 If[equs==={},Continue[]];
 
 oldsolequs=(#[[1]]-#[[2]])&/@(oldsol/.{a_T:>a[[1;;-2]]});
+oldsolequs=Collect[oldsolequs,T[__],Together];
 equs=Join[equs,oldsolequs];
 
 Tvars=Union[Cases[equs,T[__],\[Infinity]]];
@@ -1480,7 +1514,7 @@ bmatrix];
 
 (* ::Input::Initialization:: *)
 Options[TCalc]:=DeleteCases[Join[{"Letters"->Automatic},Options[checkDegrees],Options[solCalc],Options[FFInvMatMul]]//DeleteDuplicates,"InvertInput"->_];
-TCalc[Am_,OptionsPattern[]]:=Module[{graphvars,letters,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax,ansatzF},
+TCalc[Am_,OptionsPattern[]]:=Module[{graphvars,letters,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax,ansatzF,tr,i},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[TCalc];
 print=!OptionValue["Silent"];
 
@@ -1512,26 +1546,34 @@ If[print,Print["AnsatzFunctions: ",ansatzF]];
 sz=Length[Am];
 If[print,Print["Size of the matrix: ",sz]];
 
+tr=OptionValue["TakeRow"];
+If[Head[tr]=!=List,tr={{tr,sz}}];
+
 If[print,Print["Calculating psi."]];
 psi1=psiCalc[Am,Sequence@@FilterRules[opt,Options[psiCalc]]];
 If[psi1===$Failed,Return[$Failed]];
 
 If[print,Print["Calculating degrees."]];
 time=SessionTime[];
-degs=checkDegrees[psi1,Sequence@@FilterRules[opt,Options[checkDegrees]]];
+degs=Table[checkDegrees[psi1,Sequence@@DeleteCases[FilterRules[opt,Options[checkDegrees]],("TakeRow"->_)],"TakeRow"->tr[[i,1]]],{i,Length[tr]}];
 If[print,Print[ToString[SetAccuracy[SessionTime[]-time,3]]," s"]];
-If[degs===$Failed,Return[$Failed]];
+If[MemberQ[degs,$Failed],Return[$Failed]];
 (*Print[degs];*)
 (*checking the degrees*)
 pmax=sz (sz+1)/2;
-pmax=And@@Table[degs[[2,l+1]]<=(pmax-l),{l,0,sz}];
+pmax=And@@Flatten[Table[degs[[i,2,l+1]]<=(pmax-l),{i,Length[degs]},{l,0,sz}]];
 If[!pmax,Print["Degree check failed, the integral cannot be a UT integral."];Return[$Failed]];
-If[degs[[1]]<1,Print["b-tilde[0](0) not vanishing. Try a different normalization."];Return[$Failed]];
+Catch[
+Do[
+If[degs[[i,1]]<1,Print["b-tilde[0](0) not vanishing. Try a different normalization for integral ",i];Throw[Return[$Failed]]];
+,{i,Length[degs]}];
+];
 
 If[print,Print["Calculating solution."]];
-sol1=solCalc[psi1,letters,degs,Sequence@@FilterRules[opt,Options[solCalc]]];
+sol1=solCalc[psi1,letters,degs,Sequence@@DeleteCases[FilterRules[opt,Options[solCalc]],("TakeRow"->_)],"TakeRow"->tr];
 If[sol1===$Failed,Return[$Failed]];
-If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,Return[sol1]];
+If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,
+Print["Full solution not found, returning only partial solution"];Return[sol1]];
 
 If[print,Print["Calculating full phi-matrix."]];
 bmatrix=BCalc[sol1,letters,Sequence@@FilterRules[opt,Options[BCalc]]];
