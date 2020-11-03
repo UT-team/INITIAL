@@ -11,8 +11,8 @@ BeginPackage["INITIAL`",{"FiniteFlow`"}];
 (* ::Input::Initialization:: *)
 (*Print["Package for obtaining the transformation matrix to canonical basis"]
 Print["Author: Christoph Dlapa and Kai Yan"];
-Print["Version: 1.1dev"];
-Print["Last changes: 12.03.2020"];*)
+Print["Version: 1.2dev"];
+Print["Last changes: 03.11.2020"];*)
 
 
 (* ::Input:: *)
@@ -37,12 +37,12 @@ Remove@@functionNames//Quiet;
 
 (* ::Input::Initialization:: *)
 psiStep::usage="\
-psiStep[A[1],v0.A[i-1]] calculates the first row of A[i], which is v0.A[i].";
+psiStep[A[1],v[1].A[i-1]] calculates the first row of A[i], which is v[1].A[i].";
 
 
 (* ::Input::Initialization:: *)
 FFpsiStep::usage="\
-FFpsiStep[A[1],v0.A[i-1]] calculates the first row of A[i], which is v0.A[i]. For this calculation, FiniteFlow is used.";
+FFpsiStep[A[1],v[1].A[i-1]] calculates the first row of A[i], which is v[1].A[i]. For this calculation, FiniteFlow is used.";
 
 
 (* ::Input::Initialization:: *)
@@ -52,12 +52,12 @@ psiCalc[AMatrix] calculates the psi-matrix.";
 
 (* ::Input::Initialization:: *)
 phiStep::usage="\
-phiStep[B[1],{v0.B[i-1](j-1),v0.B[i-1](j)},{TVariables[i-1](j-1),TVariables[i-1](j),sol] calculates v0.B[i](j) in the variables \"TVariables\" while taking into account the solution \"sol\" frome the previous order. Output is a list of length two. The first entry gives the coefficients of the variables given in the second entry.";
+phiStep[B[1],{v[1].B[i-1](j-1),v[1].B[i-1](j)},{TVariables[i-1](j-1),TVariables[i-1](j),sol] calculates v[1].B[i](j) in the variables \"TVariables\" while taking into account the solution \"sol\" frome the previous order. Output is a list of length two. The first entry gives the coefficients of the variables given in the second entry.";
 
 
 (* ::Input::Initialization:: *)
 FFphiStep::usage="\
-FFphiStep[B[1],{v0.B[i-1](j-1),v0.B[i-1](j)},{TVariables[i-1](j-1),TVariables[i-1](j),sol] calculates v0.B[i](j) in the variables \"TVariables\" while taking into account the solution \"sol\" frome the previous order. Output is a list of length two. The first entry gives the coefficients of the variables given in the second entry. For this calculation, FiniteFlow is used.";
+FFphiStep[B[1],{v[1].B[i-1](j-1),v[1].B[i-1](j)},{TVariables[i-1](j-1),TVariables[i-1](j),sol] calculates v[1].B[i](j) in the variables \"TVariables\" while taking into account the solution \"sol\" frome the previous order. Output is a list of length two. The first entry gives the coefficients of the variables given in the second entry. For this calculation, FiniteFlow is used.";
 
 
 (* ::Input::Initialization:: *)
@@ -125,7 +125,7 @@ nthO::singmatrix="The matrix is singular, suggesting that the derivatives do not
 
 
 (* ::Input::Initialization:: *)
-If[!ValueQ[Global`$UsedSymbols],Global`$UsedSymbols={Global`T,Global`v0,Global`m}];
+If[!ValueQ[Global`$UsedSymbols],Global`$UsedSymbols={Global`T,Global`v,Global`m}];
 
 
 (* ::Input::Initialization:: *)
@@ -133,7 +133,7 @@ Begin["`Private`"]
 
 
 (* ::Input::Initialization:: *)
-{T,v0,m}=Global`$UsedSymbols;
+{T,v,m}=Global`$UsedSymbols;
 Set@@@Transpose[{Global`$UsedSymbols,Global`$UsedSymbols}];
 
 
@@ -233,7 +233,7 @@ If[outA===FFMissingPrimes,Print["Reconstruction failed. Try increasing MaxPrimes
 outA];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.1.3 psiCalc*)
 
 
@@ -586,7 +586,7 @@ epsor=1;
 sz=sz+1;
 phi1=Transpose[{{IdentityMatrix[sz][[1]]}},{3,2,1}];
 vars=Table[{{}},sz];
-vars[[1]]={{T[ToExpression["v"<>ToString[tr-1]]]}};
+vars[[1]]={{T[v[tr]]}};
 ];
 
 Do[Bco[i]={0};varsTd[i]={},{i,epsor}];
@@ -807,7 +807,7 @@ graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 tr=OptionValue["TakeRow"];
-Print["Taking row number ",tr];
+(*Print["Taking row number ",tr];*)
 
 FFDeleteGraph[psiInvGraph];
 FFNewGraph[psiInvGraph,input,graphvars];
@@ -953,7 +953,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -984,7 +984,7 @@ phi1=DeleteCases[Flatten[#],0,{1}]&/@phi1In;
 varsTdFlat=Flatten/@varsTdIn;
 
 sz=Length[psi1];
-varsTd[0]={T[ToExpression["v"<>ToString[tr-1]]]};
+varsTd[0]={T[v[tr]]};
 Do[varsTd[i]=varsTdFlat[[i]],{i,1,sz}];
 
 FFDeleteGraph[equGraph];
