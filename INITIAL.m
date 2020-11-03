@@ -233,13 +233,13 @@ If[outA===FFMissingPrimes,Print["Reconstruction failed. Try increasing MaxPrimes
 outA];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.1.3 psiCalc*)
 
 
 (* ::Input::Initialization:: *)
-Options[psiCalc]:=Join[{"Silent"->False,"FiniteFlow"->False,"MaxDerivatives"->Automatic},Options[FFpsiStep]];
-psiCalc[Am_,OptionsPattern[]]:=Module[{Aco,sz,psi1,time,xv,graphvars,i,opt,printQ,FFQ,nthreads},
+Options[psiCalc]:=Join[{"Silent"->False,"FiniteFlow"->False,"MaxDerivatives"->Automatic,"TakeRow"->1},Options[FFpsiStep]];
+psiCalc[Am_,OptionsPattern[]]:=Module[{Aco,sz,psi1,time,xv,graphvars,i,opt,printQ,FFQ,nthreads,tr},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[psiCalc];
 
 (*Checking things*)
@@ -253,6 +253,7 @@ graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[Am]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 xv=graphvars[[2]];
+tr=OptionValue["TakeRow"];
 
 nthreads=OptionValue["NThreads"];
 If[nthreads===Automatic,nthreads=FFAutomaticNThreads[]];
@@ -264,7 +265,7 @@ FFQ=True,FFQ=False];
 
 (*Computing psi step-by-step*)
 time=SessionTime[];
-Aco[1]=Am[[1]]//Together;
+Aco[1]=Am[[tr]]//Together;
 Catch[
 If[printQ,
 Monitor[
@@ -543,8 +544,8 @@ varsTd[1]];
 
 
 (* ::Input::Initialization:: *)
-Options[phiCalc]:=Join[Options[psiCalc],{"AnsatzFunctions"->Automatic}];
-phiCalc[letters_,phim1_,varsIn_,sol1_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,xv,eps,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars,ansatzF},
+Options[phiCalc]:=Join[Options[psiCalc],{"AnsatzFunctions"->Automatic,"TakeRow"->1}];
+phiCalc[letters_,phim1_,varsIn_,sol1_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,xv,eps,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars,ansatzF,tr},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[phiCalc];
 
 time=SessionTime[];
@@ -560,7 +561,14 @@ print=!OptionValue["Silent"];
 If[OptionValue["AnsatzFunctions"]===Automatic,
 ansatzF=D[Log[#],xv]&/@ansatzF];
 
-{sz,epsor}=Dimensions[phim1][[1;;2]];
+epsor=Dimensions[phim1][[1;;2]];
+
+sz=OptionValue["MaxDerivatives"];
+If[sz===Automatic,
+sz=epsor[[1]]];
+epsor=epsor[[2]];
+
+tr=OptionValue["TakeRow"];
 
 nthreads=OptionValue["NThreads"];
 If[nthreads===Automatic,nthreads=FFAutomaticNThreads[]];
@@ -578,7 +586,7 @@ epsor=1;
 sz=sz+1;
 phi1=Transpose[{{IdentityMatrix[sz][[1]]}},{3,2,1}];
 vars=Table[{{}},sz];
-vars[[1]]={{T[v0]}};
+vars[[1]]={{T[ToExpression["v"<>ToString[tr-1]]]}};
 ];
 
 Do[Bco[i]={0};varsTd[i]={},{i,epsor}];
@@ -791,13 +799,15 @@ allVars=Table[varsTd[i],{i,1,sz}];
 
 
 (* ::Input::Initialization:: *)
-Options[makePsiInvGraph]={"Variables"->Automatic};
-makePsiInvGraph[psi1_,psiInvGraph_,OptionsPattern[]]:=Module[{graphvars,t1,xt,yt,m,t,id,sz,solverlearn,singularTest},
+Options[makePsiInvGraph]={"Variables"->Automatic,"TakeRow"->1};
+makePsiInvGraph[psi1_,psiInvGraph_,OptionsPattern[]]:=Module[{graphvars,t1,xt,yt,m,t,id,sz,solverlearn,singularTest,tr},
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
 sz=Length[psi1];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
+tr=OptionValue["TakeRow"];
+Print["Taking row number ",tr];
 
 FFDeleteGraph[psiInvGraph];
 FFNewGraph[psiInvGraph,input,graphvars];
@@ -816,7 +826,7 @@ singularTest={"DepVars","IndepVars","ZeroVars"}/.solverlearn;
 If[singularTest=!={Array[xt,sz],Array[yt,sz],{}},Return[FFImpossible]];
 
 (*We only need the first row*)
-FFAlgTake[psiInvGraph,bsnode,{psiInvnode},{Flatten[Table[t[i,j],{i,sz},{j,sz}]]}->Table[t[1,j],{j,sz}]];
+FFAlgTake[psiInvGraph,bsnode,{psiInvnode},{Flatten[Table[t[i,j],{i,sz},{j,sz}]]}->Table[t[tr,j],{j,sz}]];
 FFGraphOutput[psiInvGraph,bsnode];
 
 solverlearn
@@ -828,9 +838,9 @@ solverlearn
 
 
 (* ::Input::Initialization:: *)
-Options[checkDegrees]:=Join[{"Variables"->Automatic,"TestNumbers"->Automatic,"MaxDegree"->1000,"MaxPrimes"->150},DeleteCases[Options[FFReconstructFunctionMod],("MaxDegree"->_)|("MaxPrimes"->_)]];
+Options[checkDegrees]:=Join[Options[makePsiInvGraph],{"TestNumbers"->Automatic,"MaxDegree"->1000,"MaxPrimes"->150},DeleteCases[Options[FFReconstructFunctionMod],("MaxDegree"->_)|("MaxPrimes"->_)]];
 checkDegrees[psi1_,OptionsPattern[]]:=Module[{t,detNode2,detNode3,denomIn,denomgraph,bnode,epsnode,subnode,denom,out,bs,
-sz,graphvars,psiInvGraph,bsnode,comp,opt,testnums,eps,learn},
+sz,graphvars,psiInvGraph,bsnode,comp,opt,testnums,eps,learn,tr},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[checkDegrees];
 (*testing some things*)
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
@@ -840,6 +850,8 @@ If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 eps=graphvars[[1]];
 
+tr=OptionValue["TakeRow"];
+
 testnums=OptionValue["TestNumbers"];
 If[testnums===Automatic,testnums=RandomInteger[{10,10000},Length[graphvars]-1]];
 If[(Length[testnums]=!=(Length[graphvars]-1))||(!AllTrue[testnums,Head[#]===Integer&]),Message[nthO::badtestnums];Return[$Failed]];
@@ -848,7 +860,7 @@ sz=Length[psi1];
 FFDeleteGraph[psiInvGraph];
 
 (*calculate bs and denom*)
-learn=makePsiInvGraph[psi1,psiInvGraph,"Variables"->graphvars];
+learn=makePsiInvGraph[psi1,psiInvGraph,"Variables"->graphvars,"TakeRow"->tr];
 If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
 (*build super-graph to check the degrees of the sub-graph for specific values of x*)
 (*build graph for denominator*)
@@ -889,8 +901,8 @@ FFDeleteGraph[psiInvGraph];
 
 
 (* ::Input::Initialization:: *)
-Options[eps0Calc]:=Options[FFpsiStep];
-eps0Calc[psi1_,OptionsPattern[]]:=Module[{opt,graphvars,eps,expandvars,sz,LaurentGraph,psiInvGraph,learn,denomnode,t,laurent,laurentlearn,stepout},
+Options[eps0Calc]:=Join[Options[FFpsiStep],Options[makePsiInvGraph]]//Union;
+eps0Calc[psi1_,OptionsPattern[]]:=Module[{opt,graphvars,eps,expandvars,sz,LaurentGraph,psiInvGraph,learn,denomnode,t,laurent,laurentlearn,stepout,tr},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[eps0Calc];
 (*testing some things*)
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
@@ -901,13 +913,15 @@ If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 eps=graphvars[[1]];
 expandvars=graphvars[[2;;-1]];
 
+tr=OptionValue["TakeRow"];
+
 sz=Length[psi1];
 
 FFDeleteGraph[LaurentGraph];
 FFDeleteGraph[psiInvGraph];
 
 (*calculate bs and denom*)
-learn=makePsiInvGraph[psi1,psiInvGraph,"Variables"->graphvars];
+learn=makePsiInvGraph[psi1,psiInvGraph,"Variables"->graphvars,"TakeRow"->tr];
 If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
 (*add the bs*)
 (*FFAlgTakeAndAdd[psiInvGraph,denomnode,{bsnode},{Table[t[j],{j,sz}]}->{Table[t[j],{j,sz}]}];*)
@@ -950,7 +964,7 @@ bst,phit,am,t,tp,equNode,expandvars,laurent,laurentlearn,reconstructed,equs,norm
 inputnodes,addpattrn,deletepos,takepattern,minusnormNode,
 testpoints,testpointsnew,matrix,rank,opt,learn,nthreadsm,eps,nthreads,print,time,prime,
 tpnode,zeronode,SolveGraph,evalNode,nonzerovarsTd,takenode,solveNode,z,i,solverlearn,nulltest,primetest,primetestpoint,matrixrec,matrixnew,deg,
-leadingOrder,phi1,varsTdFlat},
+leadingOrder,phi1,varsTdFlat,tr},
 time=SessionTime[];
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[equStep];
 (*test input*)
@@ -964,11 +978,13 @@ If[graphvars===Automatic,graphvars=Variables[phi1In]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 eps=graphvars[[1]];
 
+tr=OptionValue["TakeRow"];
+
 phi1=DeleteCases[Flatten[#],0,{1}]&/@phi1In;
 varsTdFlat=Flatten/@varsTdIn;
 
 sz=Length[psi1];
-varsTd[0]={T[v0]};
+varsTd[0]={T[ToExpression["v"<>ToString[tr-1]]]};
 Do[varsTd[i]=varsTdFlat[[i]],{i,1,sz}];
 
 FFDeleteGraph[equGraph];
@@ -1135,7 +1151,7 @@ equs];
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.2 Solve the Equation*)
 
 
@@ -1193,7 +1209,7 @@ sol1=FFDenseSolve[equs==0//Thread,Tvars,Sequence@@FilterRules[opt,Options[FFDens
 If[sol1===$Failed,Print["Solver failed. Try increasing MaxDegree or MaxPrimes."];Throw[Return[$Failed]]];
 If[sol1===FFMissingPrimes,Print["Solver failed. Try increasing MaxPrimes."];Throw[Return[$Failed]]];
 
-If[MemberQ[sol1,T[v0]->0],Break[]];
+If[MemberQ[sol1,T[_]->0],Break[]];
 (*Now format the solution*)
 sol1=List@@@sol1;
 sol1[[All,1]]=sol1[[All,1]]/.T[b__]->T[b,\!\(\*
