@@ -953,7 +953,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -1151,7 +1151,7 @@ equs];
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.2 Solve the Equation*)
 
 
@@ -1159,7 +1159,7 @@ equs];
 Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
 solCalc[psi1_,letters_,degs_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
 phi2,opt,print,time,a,ts,Qtest,Tvars,ansatzF,
-extracheck,checksol},
+extracheck,checksol,oldsolequs},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
 ansatzF=OptionValue["AnsatzFunctions"];
@@ -1202,8 +1202,12 @@ equs=Collect[equs//.oldsol,T[__],Together];
 equs=DeleteCases[equs,0];
 If[equs==={},Continue[]];
 
+oldsolequs=(#[[1]]-#[[2]])&/@(oldsol/.{a_T:>a[[1;;-2]]});
+equs=Join[equs,oldsolequs];
+
 Tvars=Union[Cases[equs,T[__],\[Infinity]]];
-Tvars=Join[ts,Tvars]//DeleteDuplicates//Reverse;
+(*Tvars=Join[ts,Tvars]//DeleteDuplicates//Reverse;*)
+Tvars=Tvars//Reverse;
 
 sol1=FFDenseSolve[equs==0//Thread,Tvars,Sequence@@FilterRules[opt,Options[FFDenseSolve]]];
 If[sol1===$Failed,Print["Solver failed. Try increasing MaxDegree or MaxPrimes."];Throw[Return[$Failed]]];
@@ -1224,7 +1228,7 @@ NumberMarks->True],
 FullForm]\)];
 sol1[[All,2]]=sol1[[All,2]]/.T[b__]->T[b,a];
 sol1=Rule@@@sol1;
-sol1=Join[oldsol,sol1];
+(*sol1=Join[oldsol,sol1];*)
 checksol=sol1;
 Quiet[Check[
 sol1[[All,2]]=sol1[[All,2]]//.sol1;
