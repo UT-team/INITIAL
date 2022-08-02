@@ -1406,7 +1406,7 @@ FFReconstructFunction[graph,params, Sequence@@FilterRules[{opt}, Options[FFRecon
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.5.2 basisChange*)
 
 
