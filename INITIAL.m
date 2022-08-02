@@ -24,7 +24,7 @@ Print["Last changes: 03.11.2020"];*)
 
 
 (* ::Input::Initialization:: *)
-functionNames={"psiStep","FFpsiStep","psiCalc","phiStep","FFphiStep","phiCalc","makePsiInvGraph","checkDegrees","eps0Calc","equStep","solCalc","FFInvMatMul","basisChange","BCalc","TCalc"};
+functionNames={"psiStep","FFpsiStep","psiCalc","phiStep","FFphiStep","phiCalc","makePsiInvGraph","checkDegrees","eps0Calc","equStep","solCalc","FFInvMatMul","basisChange","denominators","BCalc","TCalc"};
 
 
 (* ::Input::Initialization:: *)
@@ -99,6 +99,13 @@ FFInvMatMul[mat1,mat2,...,\"InvertInput\"->n] inverts \"matn\" before the multip
 (* ::Input::Initialization:: *)
 basisChange::usage="\
 basisChange[AMatrix,TMatrix,x] uses FiniteFlow to compute the basis change given through \"TMatrix\" of the differential equation given through \"AMatrix\"."
+
+
+(* ::Input::Initialization:: *)
+denominators::usage="\
+denominators[AMatrix] returns all unique denominator factors in \"AMatrix\".
+denominators[AMatrix,x] returns all unique denominator factors in \"AMatrix\" that depend on \"x\".
+denominators[AMatrix,x,eps] returns all unique denominator factors in \"AMatrix\" that depend on \"x\" and not on \"eps\"."
 
 
 (* ::Input::Initialization:: *)
@@ -1303,6 +1310,22 @@ atest=ArrayReshape[atest,{sz,sz}];
 FFDeleteGraph[Tgraph];
 
 atest];
+
+
+(* ::Subsection::Closed:: *)
+(*1.5.3 denominators*)
+
+
+(* ::Input::Initialization:: *)
+getDenomFacs[in_List]:=getDenomFacs/@in;
+getDenomFacs[in_Plus]:=getDenomFacs/@(List@@in);
+getDenomFacs[in:Except[_List|_Plus]]:=Union[FactorList[Denominator[in]][[All,1]]];
+
+
+(* ::Input::Initialization:: *)
+denominators[amatrix_]:=Select[Union[Flatten[getDenomFacs[amatrix]]],Variables[#]=!={}&];
+denominators[amatrix_,xv_]:=Select[denominators[amatrix],MemberQ[{#},xv,Infinity]&];
+denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,Infinity]&];
 
 
 (* ::Section:: *)
