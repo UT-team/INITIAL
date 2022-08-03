@@ -19,7 +19,7 @@ Print["Last changes: 03.11.2020"];*)
 (*SetOptions[EvaluationNotebook[],ShowGroupOpener->True]*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Descriptions*)
 
 
@@ -813,7 +813,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -834,7 +834,7 @@ deg=degsIn[[1]];
 
 print=!OptionValue["Silent"];
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Union[{eps},Variables[phi1In]]];
+If[graphvars===Automatic,graphvars=Union[{eps},Variables[{psi1,phi1In}]]];
 (*If[Length[graphvars]<1,Print["here"];Message[nthO::badvars];Return[$Failed]];*)
 (*eps=graphvars[[1]];*)
 expandvars=DeleteCases[graphvars,eps];
@@ -852,9 +852,8 @@ FFDeleteGraph[equGraph];
 FFDeleteGraph[LaurentGraph];
 
 (*calculate bs and denom*)
-learn=makePsiInvGraph[psi1,equGraph,Sequence@@FilterRules[opt,Options[makePsiInvGraph]]];
+learn=makePsiInvGraph[psi1,equGraph,Sequence@@DeleteCases[FilterRules[opt,Options[makePsiInvGraph]],("Variables"->_)],"Variables"->graphvars];
 If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
-
 FFAlgRatFunEval[equGraph,normNode,{input},graphvars,{eps^deg}];
 
 FFAlgRatFunEval[equGraph,minusnormNode,{input},graphvars,{-eps^deg}];
@@ -942,7 +941,7 @@ matrix=Join[FFGraphEvaluateMany[LaurentGraph,testpointsnew,"PrimeNo"->0,Sequence
 matrix=RowReduce[matrix,Modulus->prime];
 rank=MatrixRank[matrix,Modulus->prime];
 ];
-
+If[rank===0,Return[matrix . nonzerovarsTd]];
 testpoints=Join[{primetestpoint},testpoints[[1;;rank]]];
 matrix=matrix[[1;;rank]];
 If[print,Print["Rank of system: ",rank]];
@@ -969,7 +968,9 @@ matrixrec=Map[FFRatRec[#,prime]&,matrix,{2}];
 (*matrix=DeleteCases[matrix,{0..}];*)
 
 (*Testing if first evaluation was enough*)
-nulltest=NullSpace[matrixrec];
+If[matrixrec=!={},
+nulltest=NullSpace[matrixrec],
+nulltest={}];
 If[nulltest==={},
 nulltest=False;
 ,
@@ -1275,13 +1276,13 @@ If[!SquareMatrixQ[amatrix],Message[nthO::badmatrix1];Return[$Failed]];
 If[!SquareMatrixQ[Tmatrix],Message[nthO::badmatrix2];Return[$Failed]];
 
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Variables[amatrix]];
+If[graphvars===Automatic,graphvars=Variables[{amatrix,Tmatrix}]];
 (*If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];*)
 (*xv=graphvars[[2]];*)
 sz=Length[amatrix];
 
 (*make graph for computing Tinv*)
-learn=makePsiInvGraph[Tmatrix,Tgraph,Sequence@@FilterRules[opt,Options[makePsiInvGraph]]];
+learn=makePsiInvGraph[Tmatrix,Tgraph,Sequence@@DeleteCases[FilterRules[opt,Options[makePsiInvGraph]],("Variables"->_)],"Variables"->graphvars];
 If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
 
 (*Now compute the derivatives*)
