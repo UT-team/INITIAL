@@ -567,7 +567,8 @@ graphvars=OptionValue["Variables"];
 (*ansatzF=OptionValue["AnsatzFunctions"];
 If[ansatzF===Automatic,
 ansatzF=letters];*)
-If[graphvars===Automatic,graphvars=Union[{eps},Variables[ansatzF]]];
+If[graphvars===Automatic,graphvars=Variables[ansatzF]];
+graphvars=Join[{eps,xv},DeleteCases[graphvars,eps|xv]];
 If[Length[graphvars]<2,Message[nthO::badvars];Return[$Failed]];
 (*eps=graphvars[[1]];
 xv=graphvars[[2]];*)
@@ -707,6 +708,7 @@ If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
+graphvars=Join[{eps},DeleteCases[graphvars,eps]];
 (*eps=graphvars[[1]];*)
 
 tr=OptionValue["TakeRow"];
@@ -771,6 +773,7 @@ If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
 (*eps=graphvars[[1]];*)
 (*expandvars=graphvars[[2;;-1]];*)
+graphvars=Join[{eps},DeleteCases[graphvars,eps]];
 expandvars=DeleteCases[graphvars,eps];
 
 tr=OptionValue["TakeRow"];
@@ -813,7 +816,7 @@ stepout
 (*1.4 The equation*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.1 Calculate the Equation*)
 
 
@@ -834,9 +837,10 @@ deg=degsIn[[1]];
 
 print=!OptionValue["Silent"];
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Union[{eps},Variables[{psi1,phi1In}]]];
+If[graphvars===Automatic,graphvars=Variables[{psi1,phi1In}]];
 (*If[Length[graphvars]<1,Print["here"];Message[nthO::badvars];Return[$Failed]];*)
 (*eps=graphvars[[1]];*)
+graphvars=Join[{eps},DeleteCases[graphvars,eps]];
 expandvars=DeleteCases[graphvars,eps];
 
 tr=OptionValue["TakeRow"];
@@ -1031,6 +1035,7 @@ ansatzF=letters];*)
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[psi1]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
+graphvars=Join[{eps,xv},DeleteCases[graphvars,eps|xv]];
 
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
 
@@ -1333,12 +1338,12 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.6.1 BCalc*)
 
 
 (* ::Input::Initialization:: *)
-Options[BCalc]:={"Silent"->False,"Variables"->Automatic,"AnsatzFunctions"->Automatic};
+Options[BCalc]:={"Silent"->False,"Variables"->Automatic};
 BCalc[sol1_,ansatzF_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,sz,graphvars},
 
 (*ansatzF=OptionValue["AnsatzFunctions"];
@@ -1346,7 +1351,8 @@ If[ansatzF===Automatic,
 ansatzF=letters];*)
 print=!OptionValue["Silent"];
 graphvars=OptionValue["Variables"];
-If[graphvars===Automatic,graphvars=Union[{eps},Variables[ansatzF]]];
+If[graphvars===Automatic,graphvars=Variables[ansatzF]];
+graphvars=Join[{eps,x},DeleteCases[graphvars,eps|x]];
 (*eps=graphvars[[1]];
 x=graphvars[[2]];*)
 (*If[OptionValue["AnsatzFunctions"]===Automatic,
@@ -1397,6 +1403,7 @@ If[!SquareMatrixQ[Am],Message[nthO::badmatrix1];Return[$Failed]];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[Am]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
+graphvars=Join[{eps,xv},DeleteCases[graphvars,eps|xv]];
 If[print,Print["Variables: ",graphvars]];
 
 (*letters=OptionValue["Letters"];
