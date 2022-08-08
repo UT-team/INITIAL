@@ -19,7 +19,7 @@ Print["Last changes: 03.11.2020"];*)
 (*SetOptions[EvaluationNotebook[],ShowGroupOpener->True]*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Descriptions*)
 
 
@@ -110,7 +110,7 @@ denominators[AMatrix,x,eps] returns all unique denominator factors in \"AMatrix\
 
 (* ::Input::Initialization:: *)
 BCalc::usage="\
-BCalc[sol,ansatzFunctions,x,eps] computes the BMatrix from the \"ansatzFunctions\" and the solution \"sol\" given by solCalc."
+BCalc[sol,ansatzFunctions,n,x,eps] computes the BMatrix of size \"n x n\" from the \"ansatzFunctions\" and the solution \"sol\" given by solCalc."
 
 
 (* ::Input::Initialization:: *)
@@ -182,7 +182,7 @@ outA=Together[outA];
 outA];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.1.2 FFpsiStep*)
 
 
@@ -1140,6 +1140,10 @@ sol1=sol1//Union;
 oldsol=sol1;
 
 ts=Union[Cases[sol1[[All,2]],T[__],\[Infinity]]][[All,1;;-2]];
+
+ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
+ts=Union[Cases[ts,T[__],\[Infinity]]];
+
 If[print,Print["Number of independent variables found so far: ",Length[ts]]];
 
 If[Length[ts]===sz,
@@ -1275,7 +1279,7 @@ FFReconstructFunction[graph,params, Sequence@@FilterRules[{opt}, Options[FFRecon
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.5.2 basisChange*)
 
 
@@ -1354,7 +1358,7 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 
 (* ::Input::Initialization:: *)
 Options[BCalc]:={"Silent"->False,"Variables"->Automatic};
-BCalc[sol1_,ansatzF_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,sz,graphvars},
+BCalc[sol1_,ansatzF_,sz_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,graphvars},
 
 (*ansatzF=OptionValue["AnsatzFunctions"];
 If[ansatzF===Automatic,
@@ -1369,13 +1373,21 @@ x=graphvars[[2]];*)
 ansatzF=D[Log[#],x]&/@ansatzF];*)
 
 ts=Cases[sol1[[All,2]],T[__],\[Infinity]]//Union;
+
+If[Length[ts]===0,
+Print["Relations missing."];Return[$Failed]];
+
 ts=ts[[All,1;;-2]];
-sz=Length[ts];
+ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
+ts=Union[Cases[ts,T[__],\[Infinity]]];
+(*sz=Length[ts];*)
+If[(!(Length[ts]===sz)),
+Print["Relations missing."];Return[$Failed]];
 
 Qtest=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 QtestTs=Union[Cases[Qtest,T[__],\[Infinity]]];
 
-If[(!(Length[QtestTs]===sz))||(sz===0),
+If[(!(Length[QtestTs]===sz))||(Length[QtestTs]===0),
 Print["Relations missing."];Return[$Failed]];
 If[!(QtestTs===ts),
 Print["Relations not closed.";Return[$Failed]]
@@ -1465,7 +1477,7 @@ If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,
 Print["Full solution not found, returning only partial solution"];Return[sol1]];
 
 If[print,Print["Calculating full phi-matrix."]];
-bmatrix=BCalc[sol1,ansatzF,xv,eps,Sequence@@FilterRules[opt,Options[BCalc]]];
+bmatrix=BCalc[sol1,ansatzF,sz,xv,eps,Sequence@@FilterRules[opt,Options[BCalc]]];
 phi2=psiCalc[bmatrix,xv,Sequence@@FilterRules[opt,Options[psiCalc]]];
 If[bmatrix===$Failed,Return[$Failed]];
 
