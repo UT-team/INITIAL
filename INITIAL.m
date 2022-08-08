@@ -19,7 +19,7 @@ Print["Last changes: 03.11.2020"];*)
 (*SetOptions[EvaluationNotebook[],ShowGroupOpener->True]*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Descriptions*)
 
 
@@ -1408,7 +1408,7 @@ bmatrix=Sum[Together[eps ansatzF[[i]]]ms[[i]],{i,Length[ansatzF]}]//Together;
 bmatrix];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.6.2 TCalc*)
 
 
@@ -1473,11 +1473,13 @@ If[degs[[i,1]]<1,Print["b-tilde[0](0) not vanishing. Try a different normalizati
 If[print,Print["Calculating solution."]];
 sol1=solCalc[psi1,ansatzF,degs,xv,eps,Sequence@@DeleteCases[FilterRules[opt,Options[solCalc]],("TakeRow"->_)],"TakeRow"->tr];
 If[sol1===$Failed,Return[$Failed]];
-If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,
-Print["Full solution not found, returning only partial solution"];Return[sol1]];
+(*If[Length[Union[Cases[sol1[[All,2]],T[__],\[Infinity]]]]=!=sz,
+Print["Full solution not found, returning only partial solution"];Return[sol1]];*)
 
 If[print,Print["Calculating full phi-matrix."]];
 bmatrix=BCalc[sol1,ansatzF,sz,xv,eps,Sequence@@FilterRules[opt,Options[BCalc]]];
+If[bmatrix===$Failed,
+Print["Full solution not found, returning only partial solution"];Return[sol1]];
 phi2=psiCalc[bmatrix,xv,Sequence@@FilterRules[opt,Options[psiCalc]]];
 If[bmatrix===$Failed,Return[$Failed]];
 
