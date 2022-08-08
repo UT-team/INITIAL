@@ -1026,7 +1026,7 @@ equs];
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.2 Solve the Equation*)
 
 
@@ -1110,13 +1110,15 @@ equs=Join[equs,oldsolequs];
 
 Tvars=Union[Cases[equs,T[__],\[Infinity]]];
 (*Tvars=Join[ts,Tvars]//DeleteDuplicates//Reverse;*)
+Tvars=DeleteCases[Tvars,T[_]];
 Tvars=Tvars//Reverse;
 
 sol1=FFDenseSolve[equs==0//Thread,Tvars,Sequence@@FilterRules[opt,Options[FFDenseSolve]]];
 If[sol1===$Failed,Print["Solver failed. Try increasing MaxDegree or MaxPrimes."];Throw[Return[$Failed]]];
 If[sol1===FFMissingPrimes,Print["Solver failed. Try increasing MaxPrimes."];Throw[Return[$Failed]]];
 
-If[MemberQ[sol1,T[_]->0],Break[]];
+(*If[MemberQ[sol1,T[_]->0],Break[]];*)
+If[(sol1===FFImpossible)||(Flatten[sol1]==={}),Print["No solution found."];Throw[Return[$Failed]]];
 (*Now format the solution*)
 sol1=List@@@sol1;
 sol1[[All,1]]=sol1[[All,1]]/.T[b__]->T[b,\!\(\*
@@ -1408,7 +1410,7 @@ bmatrix=Sum[Together[eps ansatzF[[i]]]ms[[i]],{i,Length[ansatzF]}]//Together;
 bmatrix];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.6.2 TCalc*)
 
 
