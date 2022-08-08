@@ -153,8 +153,8 @@ Set@@@Transpose[{Global`$UsedSymbols,Global`$UsedSymbols}];
 
 
 (* ::Input::Initialization:: *)
-Options[psiStep]:={"Variables"->Automatic,Method->Automatic};
-psiStep[startA_,stepA_,xv_,OptionsPattern[]]:=Module[{opt,sz,graphvars,outA},
+Options[psiStep]:={"Variables"->Automatic,"DerivativeRules"->{},Method->Automatic};
+psiStep[startA_,stepA_,xv_,OptionsPattern[]]:=Module[{opt,sz,graphvars,outA,Dreps},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[psiStep];
 (*testing some things*)
 
@@ -163,13 +163,15 @@ If[!SquareMatrixQ[startA],Message[nthO::badmatrix1];Return[$Failed]];
 sz=Length[startA];
 
 If[Dimensions[stepA]=!={sz},Message[nthO::badlist];Return[$Failed]];
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
 
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[startA]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
 (*xv=graphvars[[2]];*)
 
-outA=D[stepA,xv]+stepA . startA;
+outA=D[stepA,xv]/.Dreps;
+outA=outA+stepA . startA;
 
 If[$KernelCount>0,
 outA=ParallelMap[Together,outA,Sequence@@FilterRules[opt,Options[ParallelMap]]];
@@ -180,14 +182,14 @@ outA=Together[outA];
 outA];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.1.2 FFpsiStep*)
 
 
 (* ::Input::Initialization:: *)
-Options[FFpsiStep]:=Join[{"Variables"->Automatic,"MaxDegree"->1000,"MaxPrimes"->150},DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
+Options[FFpsiStep]:=Join[{"Variables"->Automatic,"MaxDegree"->1000,"MaxPrimes"->150,"DerivativeRules"->{}},DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
 FFpsiStep[startAIn_,stepAIn_,xv_,OptionsPattern[]]:=Module[{outA,pA,qA,psiGraph,input,starANode,stepANode,derNode1,derNode2,graphvars,mulNode,addNode,sz,startA,stepA,
-der1,der2,time,derNode21,derNode22,derNode23,opt},
+der1,der2,time,derNode21,derNode22,derNode23,opt,Dreps},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[FFpsiStep];
 (*testing some things*)
 
@@ -197,10 +199,13 @@ sz=Length[startAIn];
 
 If[Dimensions[stepAIn]=!={sz},Message[nthO::badlist];Return[$Failed]];
 
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
+
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[startAIn]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
 (*xv=graphvars[[2]];*)
+graphvars=Union[graphvars,Dreps[[All,1]]];
 
 startA=Flatten[startAIn];
 stepA=Flatten[stepAIn];
@@ -237,7 +242,7 @@ FFDeleteGraph[psiGraph];
 If[outA===$Failed,Print["Reconstruction failed. Try increasing MaxDegree."];Return[$Failed]];
 If[outA===FFMissingPrimes,Print["Reconstruction failed. Try increasing MaxPrimes."];Return[$Failed]];
 
-outA];
+outA/.Dreps];
 
 
 (* ::Subsection::Closed:: *)
@@ -318,10 +323,11 @@ psi1];
 
 (* ::Input::Initialization:: *)
 Options[phiStep]:=Join[{"Last"->False},Options[psiStep]];
-phiStep[startB_,stepBIn_,varsIn_,sol1_,xv_,OptionsPattern[]]:=Module[{opt,graphvars,stepBmul,stepBder,varsTd,lsz,stepout,vars,oldPhi,stepBmulM,zpos},
+phiStep[startB_,stepBIn_,varsIn_,sol1_,xv_,OptionsPattern[]]:=Module[{opt,graphvars,stepBmul,stepBder,varsTd,lsz,stepout,vars,oldPhi,stepBmulM,zpos,Dreps},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[phiStep];
 
 (*testing input*)
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[startB]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
@@ -334,7 +340,7 @@ lsz=Length[startB];
 
 If[!OptionValue["Last"],
 
-stepBder=D[stepBder,xv] . vars[[2]];
+stepBder=(D[stepBder,xv]/.Dreps) . vars[[2]];
 
 varsTd[1]=Table[Append[#,m[l]]&/@vars[[1]],{l,lsz}]//Flatten;
 varsTd[1]=varsTd[1]//.sol1;
@@ -381,16 +387,18 @@ Options[FFphiStep]:=Join[{"Last"->False},Options[FFpsiStep]];
 FFphiStep[startB_,stepBIn_,varsIn_,sol1_,xv_,OptionsPattern[]]:=Module[{graphvars,pB,qB,phiGraph,input,derNode1,derNode2,mul,solRedLs,solRedLsVars,
 addpattrn,inputnodes,takepattern,varsTd,deletepos,
 nummul,tp,stepout,num,take,muloutNode,stepBoutNode,lsz,opt,nzlearn,nznode,
-stepBder,stepBmul,phim1Node,chainNode,vars,oldPhi,varsTdOld},
+stepBder,stepBmul,phim1Node,chainNode,vars,oldPhi,varsTdOld,Dreps},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[FFphiStep];
 
 If[OptionValue["Last"],Return[FFphiStepLast[startB,stepBIn,varsIn,sol1,Sequence@@opt]]];
 
 (*testing input*)
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[startB]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
 (*xv=graphvars[[2]];*)
+graphvars=Union[graphvars,Dreps[[All,1]]];
 
 {stepBmul,stepBder}=stepBIn;
 
@@ -458,8 +466,8 @@ vars=Join[varsTd[0],varsTd[1]];
 varsTd[1]=vars[[Select["NonZero"/.nzlearn,#>Length[varsTd[0]]&]]];
 varsTd[0]=vars[[Select["NonZero"/.nzlearn,#<=Length[varsTd[0]]&]]];
 
-oldPhi=stepout[[1;;Length[varsTd[0]]]];
-stepout=stepout[[(Length[varsTd[0]]+1);;-1]];
+oldPhi=stepout[[1;;Length[varsTd[0]]]]/.Dreps;
+stepout=stepout[[(Length[varsTd[0]]+1);;-1]]/.Dreps;
 
 {{oldPhi,varsTd[0]},{stepout,varsTd[1]}}];
 
@@ -1267,24 +1275,26 @@ FFReconstructFunction[graph,params, Sequence@@FilterRules[{opt}, Options[FFRecon
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.5.2 basisChange*)
 
 
 (* ::Input::Initialization:: *)
-Options[basisChange]:=Join[{"MaxDegree"->1000,"MaxPrimes"->150},Options[makePsiInvGraph],DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
+Options[basisChange]:=Join[{"DerivativeRules"->{},"MaxDegree"->1000,"MaxPrimes"->150},Options[makePsiInvGraph],DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
 basisChange[amatrix_,Tmatrix_,xv_,OptionsPattern[]]:=Module[{x,graphvars,sz,Tgraph,Anode,TAnode,AddNode,outnode,opt,learn,
-pA,qA,der1,derNode1,derNode21,derNode22,derNode23,derNode2,atest},
+pA,qA,der1,derNode1,derNode21,derNode22,derNode23,derNode2,atest,Dreps},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[basisChange];
 (*testing input*)
 If[!SquareMatrixQ[amatrix],Message[nthO::badmatrix1];Return[$Failed]];
 If[!SquareMatrixQ[Tmatrix],Message[nthO::badmatrix2];Return[$Failed]];
 
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[{amatrix,Tmatrix}]];
 (*If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];*)
 (*xv=graphvars[[2]];*)
 sz=Length[amatrix];
+graphvars=Union[graphvars,Dreps[[All,1]]];
 
 (*make graph for computing Tinv*)
 learn=makePsiInvGraph[Tmatrix,Tgraph,Sequence@@DeleteCases[FilterRules[opt,Options[makePsiInvGraph]],("Variables"->_)],"Variables"->graphvars];
@@ -1315,7 +1325,7 @@ atest=ArrayReshape[atest,{sz,sz}];
 
 FFDeleteGraph[Tgraph];
 
-atest];
+atest/.Dreps];
 
 
 (* ::Subsection::Closed:: *)
@@ -1338,7 +1348,7 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.6.1 BCalc*)
 
 
