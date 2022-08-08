@@ -1026,7 +1026,7 @@ equs];
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.2 Solve the Equation*)
 
 
@@ -1354,13 +1354,13 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.6.1 BCalc*)
 
 
 (* ::Input::Initialization:: *)
 Options[BCalc]:={"Silent"->False,"Variables"->Automatic};
-BCalc[sol1_,ansatzF_,sz_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,graphvars},
+BCalc[sol1_,ansatzF_,sz_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,graphvars,noletter,QMvs,i},
 
 (*ansatzF=OptionValue["AnsatzFunctions"];
 If[ansatzF===Automatic,
@@ -1386,23 +1386,32 @@ ts=Union[Cases[ts,T[__],\[Infinity]]];
 If[(!(Length[ts]===sz)),
 Print["Relations missing."];Return[$Failed]];
 
+QMvs=Cases[ts,T[_]]//Union;
+ts=Complement[ts,QMvs];
+Do[ts=Insert[ts,QMvs[[i]],QMvs[[i,1,1]]],{i,Length[QMvs]}];
+
 Qtest=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 QtestTs=Union[Cases[Qtest,T[__],\[Infinity]]];
 
 If[(!(Length[QtestTs]===sz))||(Length[QtestTs]===0),
 Print["Relations missing."];Return[$Failed]];
-If[!(QtestTs===ts),
+If[!(QtestTs===Union[ts]),
 Print["Relations not closed.";Return[$Failed]]
 ];
 
+Print[ts];
+
+noletter={};
 If[print,Print["Calculating m's."]];
 ms=Table[temp=CoefficientArrays[Qtest[[i]],ts]//Normal;
 If[Union[temp[[1]]]=!={0},Print["Error in Qtest."]];
 If[Length[temp]===1,
-If[print,Print["Result is independent of letter ",i]];
+If[print,noletter=Append[noletter,i]];
 ConstantArray[0,{sz,sz}],
 temp[[2]]],
 {i,Length[ansatzF]}];
+
+If[noletter=!={},Print["Result is independent of letters ",noletter]];
 
 If[print,Print["Building B-matrix."]];
 bmatrix=Sum[Together[eps ansatzF[[i]]]ms[[i]],{i,Length[ansatzF]}]//Together;
