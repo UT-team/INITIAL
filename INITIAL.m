@@ -1399,8 +1399,6 @@ If[!(QtestTs===Union[ts]),
 Print["Relations not closed.";Return[$Failed]]
 ];
 
-Print[ts];
-
 noletter={};
 If[print,Print["Calculating m's."]];
 ms=Table[temp=CoefficientArrays[Qtest[[i]],ts]//Normal;
