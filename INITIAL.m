@@ -93,7 +93,8 @@ solCalc[psi,ansatzFunctions,degrees,x,eps] recursively tries to calculate a solu
 (* ::Input::Initialization:: *)
 FFInvMatMul::usage="\
 FFInvMatMul[mat1,mat2,...] uses FiniteFlow to evaluate and reconstruct mat1.mat2...\n\
-FFInvMatMul[mat1,mat2,...,\"InvertInput\"->n] inverts \"matn\" before the multiplication."
+FFInvMatMul[mat1,mat2,...,\"InvertInput\"->n] inverts \"matn\" before the multiplication.
+FFInvMatMul[mat1,mat2,...,\"LaurentExpand\"->{eps,order}] laurent expands the result around \"eps\"=0 to order \"order\"."
 
 
 (* ::Input::Initialization:: *)
@@ -1190,9 +1191,9 @@ sol1];
 
 
 (* ::Input::Initialization:: *)
-Options[FFInvMatMul] := FilterRules[Join[DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)],{"Sparse"->False,"InvertInput"->0,"MaxDegree"->1000,"MaxPrimes"->150}], Except["NeededVars"|"IndepVarsOnly"]];
+Options[FFInvMatMul] := FilterRules[Join[DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)],{"Sparse"->False,"InvertInput"->0,"LaurentExpand"->False,"MaxDegree"->1000,"MaxPrimes"->150}], Except["NeededVars"|"IndepVarsOnly"]];
 FFInvMatMul[matricesIn__, OptionsPattern[]]:=Module[
-    {eqs, len,leninv, varx, vary, varsx, varsy, sol, params,res,graph,in,learn,sparse,opt,dim,m,matmul,inv,matrices,i,test,minv},
+    {eqs, len,leninv, varx, vary, varsx, varsy, sol, params,res,graph,in,learn,sparse,opt,dim,m,matmul,inv,matrices,i,test,minv,eps,epsOrder,LaurentGraph,outgraph,LEQ,expandvars,laurent,laurentlearn,outvars},
     opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[FFInvMatMul];
 inv=OptionValue["InvertInput"];
 sparse=OptionValue["Sparse"];
@@ -1214,6 +1215,14 @@ FFNewGraph[graph];
       params = If[params===Automatic,
                   Variables[matrices],
                   params];
+LEQ=OptionValue["LaurentExpand"];
+If[LEQ=!=False,
+{eps,epsOrder}=LEQ;
+LEQ=(LEQ=!=False);
+expandvars=DeleteCases[params,eps];
+params=Join[{eps},expandvars];
+];
+
       If[params =!= {}, FiniteFlow`Private`CheckVariables[params]];
       FFGraphInputVars[graph,in,params];
 
@@ -1265,18 +1274,36 @@ FFAlgMatMul[graph,matmul[i+1],{matmul[i],m[i+1]},dim[1][[1]],dim[i][[2]],dim[i+1
 {i,2,len-1}];
       
       FFGraphOutput[graph,matmul[len]];
+
+If[LEQ,
+FFNewGraph[LaurentGraph,in,expandvars];
+FFAlgLaurent[LaurentGraph,laurent,{in},graph,epsOrder,Sequence@@FilterRules[opt,Options[FFAlgLaurent]]];
+FFGraphOutput[LaurentGraph,laurent];
+
+laurentlearn=FFLaurentLearn[LaurentGraph];
+If[laurentlearn===$Failed,Print["FFLaurentLearn failed. Try increasing MaxDegree."];FFDeleteGraph[graph];FFDeleteGraph[LaurentGraph];Return[$Failed]];
+outgraph=LaurentGraph;
+outvars=expandvars;
+,
+outgraph=graph;
+outvars=params;
+];
       
-       res = If[TrueQ[params == {}],
-               FFReconstructNumeric[graph, Sequence@@FilterRules[{opt}, Options[FFReconstructNumeric]]],
-               If[TrueQ[Length[params]==1],
-FFParallelReconstructUnivariate[graph,params, Sequence@@FilterRules[{opt}, Options[FFParallelReconstructUnivariate]]],
-FFReconstructFunction[graph,params, Sequence@@FilterRules[{opt}, Options[FFReconstructFunction]]]
+       res = If[TrueQ[outvars == {}],
+               FFReconstructNumeric[outgraph, Sequence@@FilterRules[{opt}, Options[FFReconstructNumeric]]],
+               If[TrueQ[Length[outvars]==1],
+FFParallelReconstructUnivariate[outgraph,outvars, Sequence@@FilterRules[{opt}, Options[FFParallelReconstructUnivariate]]],
+FFReconstructFunction[outgraph,outvars, Sequence@@FilterRules[{opt}, Options[FFReconstructFunction]]]
 ]
              ];
+If[LEQ,
+res=FFLaurentSol[res,eps,laurentlearn];
+];
        If[!TrueQ[res[[0]]==List],Throw[res]];
        ArrayReshape[res,{dim[1][[1]],dim[len][[2]]}]
     ];
     FFDeleteGraph[graph];
+If[LEQ,FFDeleteGraph[LaurentGraph]];
     res
 ];
 
@@ -1354,7 +1381,7 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.6.1 BCalc*)
 
 
