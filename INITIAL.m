@@ -24,7 +24,7 @@ Print["Last changes: 03.11.2020"];*)
 
 
 (* ::Input::Initialization:: *)
-functionNames={"psiStep","FFpsiStep","psiCalc","phiStep","FFphiStep","phiCalc","makePsiInvGraph","checkDegrees","eps0Calc","equStep","solCalc","FFInvMatMul","basisChange","denominators","BCalc","TCalc"};
+functionNames={"psiStep","FFpsiStep","psiCalc","phiStep","FFphiStep","phiCalc","makePsiInvGraph","checkDegrees","eps0Calc","equStep","equRec","equStepA","solCalc","FFInvMatMul","basisChange","denominators","BCalc","TCalc"};
 
 
 (* ::Input::Initialization:: *)
@@ -82,7 +82,17 @@ eps0Calc[psi,eps] computes the eps^0 part of the bs (not normalized)."
 
 (* ::Input::Initialization:: *)
 equStep::usage="\
-equStep[psi,phi,epsOrder,TVariables,degrees,eps] computes the equation at order \"epsOrder\". \"TVariables\" are the Dot products used to describe the list \"phi\", and \"degrees\" is the output of checkDegrees.";
+equStep[psi,phi,epsOrder,TVariables,degrees,eps] computes the equation at order \"epsOrder\" while sampling over all variables. \"TVariables\" are the Dot products used to describe the list \"phi\", and \"degrees\" is the output of checkDegrees.";
+
+
+(* ::Input::Initialization:: *)
+equRec::usage="\
+equRec[psi,phi,epsOrder,TVariables,degrees,eps] analytically computes the equation at order \"epsOrder\". \"TVariables\" are the Dot products used to describe the list \"phi\", and \"degrees\" is the output of checkDegrees.";
+
+
+(* ::Input::Initialization:: *)
+equStepA::usage="\
+equStepA[psi,phi,epsOrder,TVariables,degrees,eps] computes the equation at order \"epsOrder\" by removing Denominators and taking Coefficients in the variables. \"TVariables\" are the Dot products used to describe the list \"phi\", and \"degrees\" is the output of checkDegrees.";
 
 
 (* ::Input::Initialization:: *)
@@ -251,8 +261,8 @@ outA/.Dreps];
 
 
 (* ::Input::Initialization:: *)
-Options[psiCalc]:=Join[{"Silent"->False,"FiniteFlow"->False,"MaxDerivatives"->Automatic,"TakeRow"->1},Options[FFpsiStep]];
-psiCalc[Am_,xv_,OptionsPattern[]]:=Module[{Aco,sz,psi1,time,graphvars,i,opt,printQ,FFQ,nthreads,tr},
+Options[psiCalc]:=Join[{"Silent"->False,"FiniteFlow"->False,"MaxDerivatives"->Automatic,"TakeRow"->1,"SquareRoots"->{}},Options[FFpsiStep]];
+psiCalc[Am_,xv_,OptionsPattern[]]:=Module[{Aco,sz,psi1,time,graphvars,i,opt,printQ,FFQ,nthreads,tr,sqrRtRls,sqrRts,dervRls,sqrRtDRls,a},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[psiCalc];
 
 tr=OptionValue["TakeRow"];
@@ -275,6 +285,17 @@ If[graphvars===Automatic,graphvars=Variables[Am]];
 If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];
 (*xv=graphvars[[2]];*)
 
+dervRls=Flatten[{OptionValue["DerivativeRules"]}];
+sqrRtRls=Flatten[{OptionValue["SquareRoots"]}];
+sqrRts=Variables[sqrRtRls[[All,1]]];
+sqrRtRls=Solve[Equal@@@Flatten[sqrRtRls],sqrRts]//Flatten;
+sqrRts=If[FreeQ[{#},xv,Infinity],#[xv],#]&/@sqrRts;
+sqrRtDRls=Thread[D[sqrRts,xv]->D[sqrRtRls[[All,2]],xv]/sqrRtRls[[All,2]]sqrRts];
+dervRls=Union[dervRls,sqrRtDRls];
+
+sqrRtRls=(#[[1]]^a_->#[[2]]^(2Floor[a/2]) #[[1]]^(a-2Floor[a/2]))&/@sqrRtRls;
+sqrRtRls=RuleDelayed@@@sqrRtRls;
+
 nthreads=OptionValue["NThreads"];
 If[nthreads===Automatic,nthreads=FFAutomaticNThreads[]];
 FFQ=OptionValue["FiniteFlow"];
@@ -291,19 +312,21 @@ If[printQ,
 Monitor[
 Do[
 If[FFQ,
-Aco[i]=FFpsiStep[Am,Aco[i-1],xv,Sequence@@FilterRules[opt,Options[FFpsiStep]]],
-Aco[i]=psiStep[Am,Aco[i-1],xv,Sequence@@FilterRules[opt,Options[psiStep]]];
+Aco[i]=FFpsiStep[Am,Aco[i-1],xv,Sequence@@Join[DeleteCases[FilterRules[opt,Options[FFpsiStep]],"DerivativeRules"->_],{"DerivativeRules"->dervRls}]],
+Aco[i]=psiStep[Am,Aco[i-1],xv,Sequence@@Join[DeleteCases[FilterRules[opt,Options[psiStep]],"DerivativeRules"->_],{"DerivativeRules"->dervRls}]];
 ];
 If[Aco[i]===$Failed,Throw[Return[$Failed]]];
+Aco[i]=Aco[i]/.sqrRtRls;
 ,{i,2,sz}];
 ,{i,sz}];
 ,
 Do[
 If[FFQ,
-Aco[i]=FFpsiStep[Am,Aco[i-1],xv,Sequence@@FilterRules[opt,Options[FFpsiStep]]],
-Aco[i]=psiStep[Am,Aco[i-1],xv,Sequence@@FilterRules[opt,Options[psiStep]]];
+Aco[i]=FFpsiStep[Am,Aco[i-1],xv,Sequence@@Join[DeleteCases[FilterRules[opt,Options[FFpsiStep]],"DerivativeRules"->_],{"DerivativeRules"->dervRls}]],
+Aco[i]=psiStep[Am,Aco[i-1],xv,Sequence@@Join[DeleteCases[FilterRules[opt,Options[psiStep]],"DerivativeRules"->_],{"DerivativeRules"->dervRls}]];
 ];
 If[Aco[i]===$Failed,Throw[Return[$Failed]]];
+Aco[i]=Aco[i]/.sqrRtRls;
 ,{i,2,sz}];
 ];
 ];
@@ -568,7 +591,7 @@ varsTd[1]];
 
 (* ::Input::Initialization:: *)
 Options[phiCalc]:=Join[Options[psiCalc],{"TakeRow"->1}];
-phiCalc[ansatzF_,phim1_,varsIn_,sol1_,xv_,eps_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars,tr},
+phiCalc[ansatzF_,phim1_,varsIn_,sol1_,xv_,eps_,OptionsPattern[]]:=Module[{phi1,varsTd,time,startB,Bco,graphvars,allVars,i,opt,print,epsor,sz,vars,nthreads,FFQ,oldPhi,oldVars,tr,dervRls,sqrRts,sqrRtRls,sqrRtDRls},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[phiCalc];
 
 time=SessionTime[];
@@ -584,6 +607,17 @@ xv=graphvars[[2]];*)
 print=!OptionValue["Silent"];
 (*If[OptionValue["AnsatzFunctions"]===Automatic,
 ansatzF=D[Log[#],xv]&/@ansatzF];*)
+
+dervRls=Flatten[{OptionValue["DerivativeRules"]}];
+sqrRtRls=Flatten[{OptionValue["SquareRoots"]}];
+sqrRts=Variables[sqrRtRls[[All,1]]];
+sqrRtRls=Solve[Equal@@@Flatten[sqrRtRls],sqrRts]//Flatten;
+sqrRts=If[FreeQ[{#},xv,Infinity],#[xv],#]&/@sqrRts;
+sqrRtDRls=Thread[D[sqrRts,xv]->D[sqrRtRls[[All,2]],xv]/sqrRtRls[[All,2]]sqrRts];
+dervRls=Union[dervRls,sqrRtDRls];
+
+sqrRtRls=(#[[1]]^a_->#[[2]]^(2Floor[a/2]) #[[1]]^(a-2Floor[a/2]))&/@sqrRtRls;
+sqrRtRls=RuleDelayed@@@sqrRtRls;
 
 epsor=Dimensions[phim1][[1;;2]];
 
@@ -622,13 +656,13 @@ Monitor[
 Do[
 If[FFQ,
 {{oldPhi,oldVars},{Bco[i],varsTd[i]}}=FFphiStep[startB,{phi1[[i-1,epsor]],Bco[i-1]},{vars[[i-1,epsor]],varsTd[i-1]},sol1,xv,
-Sequence@@FilterRules[Join[opt,{"Last"->(i===(sz+1))}],Options[FFphiStep]]];
+Sequence@@Join[DeleteCases[FilterRules[opt,Options[FFphiStep]],"DerivativeRules"->_],{"Last"->(i===(sz+1)),"DerivativeRules"->dervRls}]];
 ,
 {{oldPhi,oldVars},{Bco[i],varsTd[i]}}=phiStep[startB,{phi1[[i-1,epsor]],Bco[i-1]},{vars[[i-1,epsor]],varsTd[i-1]},sol1,xv,
-Sequence@@FilterRules[Join[opt,{"Last"->(i===(sz+1))}],Options[phiStep]]];
+Sequence@@Join[DeleteCases[FilterRules[opt,Options[phiStep]],"DerivativeRules"->_],{"Last"->(i===(sz+1)),"DerivativeRules"->dervRls}]];
 ];
 If[Bco[i]===$Failed,Throw[Return[$Failed]]];
-phi1[[i-1,epsor]]=oldPhi;
+phi1[[i-1,epsor]]=oldPhi/.sqrRtRls;
 vars[[i-1,epsor]]=oldVars;
 ,{i,epsor+1,sz+1}];
 ,{i,sz}];
@@ -636,13 +670,13 @@ vars[[i-1,epsor]]=oldVars;
 Do[
 If[FFQ,
 {{oldPhi,oldVars},{Bco[i],varsTd[i]}}=FFphiStep[startB,{phi1[[i-1,epsor]],Bco[i-1]},{vars[[i-1,epsor]],varsTd[i-1]},sol1,xv,
-Sequence@@FilterRules[Join[opt,{"Last"->(i===(sz+1))}],Options[FFphiStep]]];
+Sequence@@Join[DeleteCases[FilterRules[opt,Options[psiStep]],"DerivativeRules"->_],{"Last"->(i===(sz+1)),"DerivativeRules"->dervRls}]];
 ,
 {{oldPhi,oldVars},{Bco[i],varsTd[i]}}=phiStep[startB,{phi1[[i-1,epsor]],Bco[i-1]},{vars[[i-1,epsor]],varsTd[i-1]},sol1,xv,
-Sequence@@FilterRules[Join[opt,{"Last"->(i===(sz+1))}],Options[phiStep]]];
+Sequence@@Join[DeleteCases[FilterRules[opt,Options[psiStep]],"DerivativeRules"->_],{"Last"->(i===(sz+1)),"DerivativeRules"->dervRls}]];
 ];
 If[Bco[i]===$Failed,Throw[Return[$Failed]]];
-phi1[[i-1,epsor]]=oldPhi;
+phi1[[i-1,epsor]]=oldPhi/.sqrRtRls;
 vars[[i-1,epsor]]=oldVars;
 ,{i,epsor+1,sz+1}];
 ];
@@ -709,7 +743,7 @@ solverlearn
 (* ::Input::Initialization:: *)
 Options[checkDegrees]:=Join[Options[makePsiInvGraph],{"TestNumbers"->Automatic,"MaxDegree"->1000,"MaxPrimes"->150},DeleteCases[Options[FFReconstructFunctionMod],("MaxDegree"->_)|("MaxPrimes"->_)]];
 checkDegrees[psi1_,eps_,OptionsPattern[]]:=Module[{t,detNode2,detNode3,denomIn,denomgraph,bnode,epsnode,subnode,denom,out,bs,
-sz,graphvars,psiInvGraph,bsnode,comp,opt,testnums,learn,tr},
+sz,graphvars,psiInvGraph,bsnode,comp,opt,testnums,learn,tr,j},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[checkDegrees];
 (*testing some things*)
 If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
@@ -826,7 +860,7 @@ stepout
 
 
 (* ::Subsection::Closed:: *)
-(*1.4.1 Calculate the Equation*)
+(*1.4.1 Calculate the Equation while sampling over the variables*)
 
 
 (* ::Input::Initialization:: *)
@@ -1027,15 +1061,175 @@ equs];
 
 
 
-(* ::Subsection::Closed:: *)
-(*1.4.2 Solve the Equation*)
+(* ::Subsection:: *)
+(*1.4.2 Calculate the Equation analytically*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*1.4.2.1 equRec*)
 
 
 (* ::Input::Initialization:: *)
-Options[solCalc]:=DeleteDuplicates[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False,"TakeRow"->1},Options[phiCalc],DeleteCases[Options[FFDenseSolve],("MaxDegree"->_)|("MaxPrimes"->_)]]];
+Options[equRec]=Join[{"Silent"->False,"MaxDegree"->1000,"MaxPrimes"->150},Options[makePsiInvGraph],Options[FFReconstructFunction]];
+equRec[psi1_,phi1In_,epsor_,varsTdIn_,degsIn_,eps_,OptionsPattern[]]:=Module[{graphvars,sz,varsTd,LaurentGraph,equGraph,
+bst,phit,am,t,tp,equNode,expandvars,laurent,laurentlearn,equs,normNode,detNode1,amNorm,
+inputnodes,addpattrn,deletepos,takepattern,minusnormNode,
+opt,learn,nthreads,print,time,
+nonzerovarsTd,takenode,solveNode,z,i,solverlearn,deg,
+leadingOrder,phi1,varsTdFlat,tr,matrixrec,SolveGraph},
+time=SessionTime[];
+opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[equRec];
+(*test input*)
+If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
+
+deg=degsIn[[1]];
+
+print=!OptionValue["Silent"];
+graphvars=OptionValue["Variables"];
+If[graphvars===Automatic,graphvars=Variables[{psi1,phi1In}]];
+(*If[Length[graphvars]<1,Print["here"];Message[nthO::badvars];Return[$Failed]];*)
+(*eps=graphvars[[1]];*)
+graphvars=Join[{eps},DeleteCases[graphvars,eps]];
+expandvars=DeleteCases[graphvars,eps];
+
+tr=OptionValue["TakeRow"];
+
+phi1=DeleteCases[Flatten[#],0,{1}]&/@phi1In;
+varsTdFlat=Flatten/@varsTdIn;
+
+sz=Length[psi1];
+varsTd[0]={T[v[tr]]};
+Do[varsTd[i]=varsTdFlat[[i]],{i,1,sz}];
+
+FFDeleteGraph[equGraph];
+FFDeleteGraph[LaurentGraph];
+
+(*calculate bs and denom*)
+learn=makePsiInvGraph[psi1,equGraph,Sequence@@DeleteCases[FilterRules[opt,Options[makePsiInvGraph]],("Variables"->_)],"Variables"->graphvars];
+If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
+FFAlgRatFunEval[equGraph,normNode,{input},graphvars,{eps^deg}];
+
+FFAlgRatFunEval[equGraph,minusnormNode,{input},graphvars,{-eps^deg}];
+
+(*multiply phi with psi and don't forget to normalize in eps*)
+Do[
+FFAlgTake[equGraph,bst[i],{bsnode},{Table[t[j],{j,sz}]}->{t[i]}];
+FFAlgRatFunEval[equGraph,phit[i],{input},graphvars,phi1[[i]]],
+{i,sz}];
+
+Do[
+FFAlgMul[equGraph,amNorm[i],{normNode,bst[i]}];
+FFAlgMatMul[equGraph,am[i],{amNorm[i],phit[i]},1,1,Length[varsTd[i]]];
+,
+{i,sz}];
+
+(*add with the derivative*)
+
+inputnodes=Join[{minusnormNode},Table[am[i],{i,sz}]];
+addpattrn=Table[varsTd[i],{i,0,sz}];
+deletepos={#}&/@(Position[addpattrn,{},{1}][[All,1]]);
+inputnodes=Delete[inputnodes,deletepos];
+addpattrn=Delete[addpattrn,deletepos];
+
+If[inputnodes=!={},
+varsTd[sz+1]=Union[Flatten[addpattrn]];
+takepattern=Position[addpattrn,#,\[Infinity]][[All,1;;2]]&/@varsTd[sz+1];
+takepattern=Apply[tp,takepattern,{2}];
+takepattern=Table[tp[i,j],{i,Length[addpattrn]},{j,Length[addpattrn[[i]]]}]->takepattern;
+FFAlgTakeAndAdd[equGraph,equNode,inputnodes,takepattern];
+,
+varsTd[sz+1]={}];
+
+(*expandvars=graphvars[[2;;-1]];*)
+
+FFGraphOutput[equGraph,equNode];
+(*expand in epsilon*)
+
+(*testres=FFGraphEvaluate[equGraph,{13,23}];
+Return[testres];*)
+
+FFNewGraph[LaurentGraph,input,expandvars];
+FFAlgLaurent[LaurentGraph,laurent,{input},equGraph,epsor,Sequence@@FilterRules[opt,Options[FFAlgLaurent]]];
+FFGraphOutput[LaurentGraph,laurent];
+
+laurentlearn=FFLaurentLearn[LaurentGraph];
+(*Print[laurentlearn];*)
+If[laurentlearn===$Failed,Print["FFLaurentLearn failed. Try increasing MaxDegree."];FFDeleteGraph[equGraph];FFDeleteGraph[LaurentGraph];Return[$Failed]];
+If[Union[laurentlearn[[2]]]=!={epsor},Print["Error in epsor 1"];Return[$Failed]];
+
+(*If[!AllTrue[laurentlearn[[1]],(#>=epsor)&],Print["Error in epsor 2"];Return[$Failed]];*)
+
+If[AllTrue[laurentlearn[[1]],(#>epsor)&],Return[{}]];
+nonzerovarsTd=Pick[varsTd[sz+1],LessEqual@@@Transpose[laurentlearn]];
+takepattern=laurentlearn[[2]]-laurentlearn[[1]]+1;
+takepattern=Table[t[i,j],{i,Length[takepattern]},{j,takepattern[[i]],1,-1}]//Flatten;
+takepattern={takepattern}->Cases[takepattern,t[_,1]];
+FFAlgTake[LaurentGraph,leadingOrder,{laurent},takepattern];
+FFGraphOutput[LaurentGraph,leadingOrder];
+
+matrixrec=FFReconstructFunction[LaurentGraph,expandvars,
+Sequence@@FilterRules[opt,Options[FFReconstructFunction]]];
+
+FFDeleteGraph[SolveGraph];
+FFDeleteGraph[LaurentGraph];
+FFDeleteGraph[equGraph];
+
+equs={matrixrec, nonzerovarsTd};
+
+equs];
+
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*1.4.2.2 equStepA*)
+
+
+(* ::Input::Initialization:: *)
+Options[equStepA]=Join[{"SquareRoots"->{}},Options[equRec]];
+equStepA[psi1_,phi1In_,epsor_,varsTdIn_,degsIn_,eps_,OptionsPattern[]]:=Module[{time,opt,print,graphvars,expandvars,equs,coeffs,coeffsNorm,denom,Tvars,sqrRtRls,sqrRts,a},
+time=SessionTime[];
+opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[equStepA];
+(*test input*)
+If[!SquareMatrixQ[psi1],Message[nthO::badmatrix1];Return[$Failed]];
+
+print=!OptionValue["Silent"];
+graphvars=OptionValue["Variables"];
+If[graphvars===Automatic,graphvars=Variables[{psi1,phi1In}]];
+graphvars=Join[{eps},DeleteCases[graphvars,eps]];
+expandvars=DeleteCases[graphvars,eps];
+
+sqrRtRls=Flatten[{OptionValue["SquareRoots"]}];
+sqrRts=Variables[sqrRtRls[[All,1]]];
+sqrRtRls=Solve[Equal@@@Flatten[sqrRtRls],sqrRts]//Flatten;
+sqrRtRls=(#[[1]]^a_->#[[2]]^(2Floor[a/2]) #[[1]]^(a-2Floor[a/2]))&/@sqrRtRls;
+sqrRtRls=RuleDelayed@@@sqrRtRls;
+
+{coeffs,Tvars}=equRec[psi1,phi1In,epsor,varsTdIn,degsIn,eps,Sequence@@FilterRules[opt,Options[equRec]]];
+
+denom=PolynomialLCM@@Denominator[coeffs];
+coeffsNorm=denom coeffs//Cancel;
+coeffsNorm=Collect[coeffsNorm,sqrRts]/.sqrRtRls;
+
+equs=coeffsNorm . Tvars;
+equs=CoefficientRules[equs,expandvars][[All,2]];
+
+If[print,Print["Total time for building equation system: ",ToString[SetAccuracy[SessionTime[]-time,3]]," s"]];
+
+equs];
+
+
+
+
+(* ::Subsection::Closed:: *)
+(*1.4.3 Solve the Equation*)
+
+
+(* ::Input::Initialization:: *)
+Options[solCalc]:=DeleteDuplicates[DeleteCases[Join[{"MaxIterations"->20,"StartIterations"->1,"ExtraCheck"->False,"TakeRow"->1,"SolveMethod"->Automatic},Options[phiCalc],Options[FFDenseSolve],Options[equStepA]],("MaxDegree"->_)|("MaxPrimes"->_)]];
 solCalc[psi1_,ansatzF_,degsIn_,xv_,eps_,OptionsPattern[]]:=Module[{phi1,sol1,oldsol,equ,equs,sz,graphvars,allVars,startit,maxit,
 phi2,opt,print,time,a,ts,Qtest,Tvars,
-extracheck,checksol,oldsolequs,tr,phi1temp,allVarstemp,i,equtemp,equstemp,degs,phiold,allVarsold},
+extracheck,checksol,oldsolequs,tr,phi1temp,allVarstemp,i,equtemp,equstemp,degs,phiold,allVarsold,solveMethod},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[solCalc];
 (*checking input*)
 (*ansatzF=OptionValue["AnsatzFunctions"];
@@ -1054,6 +1248,10 @@ time=SessionTime[];
 sz=Length[psi1];
 startit=OptionValue["StartIterations"];
 maxit=OptionValue["MaxIterations"];
+solveMethod=OptionValue["SolveMethod"];
+If[(solveMethod===Automatic)&&(OptionValue["SquareRoots"]=!={}),
+solveMethod="Analytic";
+];
 (*initialize loop*)
 oldsol={};
 ts={};
@@ -1089,11 +1287,18 @@ allVarsold=allVars;
 phi1=Join@@phi1;
 allVars=Join@@allVars;
 
-If[print,Print["Calculating the equation."]];
+If[print,If[solveMethod==="Analytic",
+Print["Calculating the equation analytically."],
+Print["Calculating the equation."]
+]];
 equ={};
 equs={};
 Do[
+If[solveMethod==="Analytic",
+equtemp=equStepA[psi1,phi1,epsor,allVars,degs[[i]],eps,Sequence@@DeleteCases[FilterRules[opt,Options[equStepA]],("TakeRow"->_)|("MaxDerivatives"->_)],"TakeRow"->tr[[i,1]]];
+,
 equtemp=equStep[psi1,phi1,epsor,allVars,degs[[i]],eps,Sequence@@DeleteCases[FilterRules[opt,Options[equStep]],("TakeRow"->_)|("MaxDerivatives"->_)],"TakeRow"->tr[[i,1]]];
+];
 If[equtemp===$Failed,Throw[Return[$Failed]]];
 equstemp=CoefficientList[equtemp,graphvars]//Flatten//Union;
 (*new, need to test: apply old solution to equations*)
@@ -1308,25 +1513,34 @@ If[LEQ,FFDeleteGraph[LaurentGraph]];
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.5.2 basisChange*)
 
 
 (* ::Input::Initialization:: *)
-Options[basisChange]:=Join[{"DerivativeRules"->{},"MaxDegree"->1000,"MaxPrimes"->150},Options[makePsiInvGraph],DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
+Options[basisChange]:=Join[{"DerivativeRules"->{},"SquareRoots"->{},"MaxDegree"->1000,"MaxPrimes"->150},Options[makePsiInvGraph],DeleteCases[Options[FFReconstructFunction],("MaxDegree"->_)|("MaxPrimes"->_)]];
 basisChange[amatrix_,Tmatrix_,xv_,OptionsPattern[]]:=Module[{x,graphvars,sz,Tgraph,Anode,TAnode,AddNode,outnode,opt,learn,
-pA,qA,der1,derNode1,derNode21,derNode22,derNode23,derNode2,atest,Dreps},
+pA,qA,der1,derNode1,derNode21,derNode22,derNode23,derNode2,atest,Dreps,sqrRts,sqrRtRls},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[basisChange];
 (*testing input*)
 If[!SquareMatrixQ[amatrix],Message[nthO::badmatrix1];Return[$Failed]];
 If[!SquareMatrixQ[Tmatrix],Message[nthO::badmatrix2];Return[$Failed]];
 
-Dreps=Flatten[{OptionValue["DerivativeRules"]}];
 graphvars=OptionValue["Variables"];
 If[graphvars===Automatic,graphvars=Variables[{amatrix,Tmatrix}]];
 (*If[Length[graphvars]<1,Message[nthO::badvars];Return[$Failed]];*)
 (*xv=graphvars[[2]];*)
 sz=Length[amatrix];
+
+Dreps=Flatten[{OptionValue["DerivativeRules"]}];
+graphvars=Union[graphvars,Dreps[[All,1]]];
+sqrRtRls=Flatten[{OptionValue["SquareRoots"]}];
+sqrRts=Variables[sqrRtRls[[All,1]]];
+sqrRtRls=Solve[Equal@@@Flatten[sqrRtRls],sqrRts]//Flatten;
+sqrRts=If[FreeQ[{#},xv,Infinity],#[xv],#]&/@sqrRts;
+sqrRtRls=Thread[D[sqrRts,xv]->D[sqrRtRls[[All,2]],xv]/sqrRtRls[[All,2]]sqrRts];
+Dreps=Union[Dreps,sqrRtRls];
+
 graphvars=Union[graphvars,Dreps[[All,1]]];
 
 (*make graph for computing Tinv*)
