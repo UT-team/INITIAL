@@ -11,8 +11,8 @@ BeginPackage["INITIAL`",{"FiniteFlow`"}];
 (* ::Input::Initialization:: *)
 (*Print["Package for obtaining the transformation matrix to canonical basis"]
 Print["Author: Christoph Dlapa and Kai Yan"];
-Print["Version: 1.2dev"];
-Print["Last changes: 03.11.2020"];*)
+Print["Version: 2.0"];
+Print["Last changes: 29.11.2022"];*)
 
 
 (* ::Input:: *)
@@ -1513,7 +1513,7 @@ If[LEQ,FFDeleteGraph[LaurentGraph]];
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.5.2 basisChange*)
 
 
