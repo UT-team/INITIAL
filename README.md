@@ -2,9 +2,10 @@
 
 INitial InTegral ALgorithm: A package for obtaining the transformation matrix to a canonical basis from one Feynman integral of uniform transcendental weight.
 
-This Mathematica package is based on the following publication:
+This Mathematica package is based on the following publications:
 
 * Christoph Dlapa, Johannes Henn and Kai Yan, _Deriving canonical differential equations for Feynman integrals from a single uniform weight integral_, [arxiv:2002.02340](https://arxiv.org/abs/2002.02340)
+* Christoph Dlapa, Johannes M. Henn and Fabian Wagner, _An algorithmic approach to finding canonical differential equations for elliptic Feynman integrals_, [arXiv:2211.16357](https://arxiv.org/abs/2211.16357)
 
 
 ## Installation
