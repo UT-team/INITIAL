@@ -1221,7 +1221,7 @@ equs];
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.4.3 Solve the Equation*)
 
 
@@ -1351,7 +1351,7 @@ ts=Union[Cases[sol1[[All,2]],T[__],\[Infinity]]][[All,1;;-2]];
 
 ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 ts=Union[Cases[ts,T[__],\[Infinity]]];
-
+(*Global`tstout[epsor]={ts,phi1,sol1,equs};*)
 If[print,Print["Number of independent variables found so far: ",Length[ts]]];
 
 If[Length[ts]===sz,
