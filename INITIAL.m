@@ -1352,19 +1352,20 @@ ts=Union[Cases[sol1[[All,2]],T[__],\[Infinity]]][[All,1;;-2]];
 ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 ts=Union[Cases[ts,T[__],\[Infinity]]];
 (*Global`tstout[epsor]={ts,phi1,sol1,equs};*)
-If[print,Print["Number of independent variables found so far: ",Length[ts]]];
+If[print,Print["Number of independent variables: ",Length[ts]]];
 
-If[Length[ts]===sz,
+If[0<Length[ts]<=sz,
 Qtest=Table[Append[#,m[i]],{i,Length[ansatzF]}]&/@ts//.sol1;
 Qtest=Union[Cases[Qtest,T[__],\[Infinity]]];
-If[Length[Qtest]===sz,
+
+If[Length[Qtest]===Length[ts],
 If[Qtest===ts,
 If[(extracheck===False)||(extracheck===(epsor-1)),
 Break[],
 extracheck=epsor],
 Print["Error in variables."];Throw[Return[$Failed]]]
 ,
-If[print,Print["Number of relations missing: ",Length[Qtest]-sz]];
+If[print,Print["Number of relations missing: ",Length[Qtest]-Length[ts]]];
 ];
 ];
 If[epsor===maxit,
@@ -1513,7 +1514,7 @@ If[LEQ,FFDeleteGraph[LaurentGraph]];
 ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.5.2 basisChange*)
 
 
@@ -1595,13 +1596,13 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.6.1 BCalc*)
 
 
 (* ::Input::Initialization:: *)
 Options[BCalc]:={"Silent"->False,"Variables"->Automatic};
-BCalc[sol1_,ansatzF_,sz_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,graphvars,noletter,QMvs,i},
+BCalc[sol1_,ansatzF_,x_,eps_,OptionsPattern[]]:=Module[{ts,ms,Qtest,QtestTs,bmatrix,print,temp,graphvars,noletter,QMvs,i,szguess,insertPos},
 
 (*ansatzF=OptionValue["AnsatzFunctions"];
 If[ansatzF===Automatic,
@@ -1616,27 +1617,35 @@ x=graphvars[[2]];*)
 ansatzF=D[Log[#],x]&/@ansatzF];*)
 
 ts=Cases[sol1[[All,2]],T[__],\[Infinity]]//Union;
-
 If[Length[ts]===0,
 Print["Relations missing."];Return[$Failed]];
 
 ts=ts[[All,1;;-2]];
 ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 ts=Union[Cases[ts,T[__],\[Infinity]]];
-(*sz=Length[ts];*)
-If[(!(Length[ts]===sz)),
+szguess=Length[ts];
+(*ts=ts[[All,1;;-2]];*)
+ts=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
+ts=Union[Cases[ts,T[__],\[Infinity]]];
+If[Length[ts]=!=szguess,
 Print["Relations missing."];Return[$Failed]];
 
 QMvs=Cases[ts,T[_]]//Union;
 ts=Complement[ts,QMvs];
-Do[ts=Insert[ts,QMvs[[i]],QMvs[[i,1,1]]],{i,Length[QMvs]}];
+privateVsPos={};
+Do[insertPos=If[QMvs[[i,1,1]]<=Length[ts],QMvs[[i,1,1]],
+Print["phi-matrix will not have full rank -> integral ",QMvs[[i,1,1]]," sorted to position ",Length[ts]+1];
+Length[ts]+1];
+ts=Insert[ts,QMvs[[i]],insertPos];
+privateVsPos=Append[privateVsPos,insertPos];
+,{i,Length[QMvs]}];
 
 Qtest=Table[Append[#,m[i]]&/@ts//.sol1,{i,Length[ansatzF]}];
 QtestTs=Union[Cases[Qtest,T[__],\[Infinity]]];
 
-If[(!(Length[QtestTs]===sz))||(Length[QtestTs]===0),
+If[Length[QtestTs]=!=szguess||(Length[QtestTs]===0),
 Print["Relations missing."];Return[$Failed]];
-If[!(QtestTs===Union[ts]),
+If[QtestTs=!=Union[ts],
 Print["Relations not closed.";Return[$Failed]]
 ];
 
@@ -1646,7 +1655,7 @@ ms=Table[temp=CoefficientArrays[Qtest[[i]],ts]//Normal;
 If[Union[temp[[1]]]=!={0},Print["Error in Qtest."]];
 If[Length[temp]===1,
 If[print,noletter=Append[noletter,i]];
-ConstantArray[0,{sz,sz}],
+ConstantArray[0,{szguess,szguess}],
 temp[[2]]],
 {i,Length[ansatzF]}];
 
@@ -1658,13 +1667,13 @@ bmatrix=Sum[Together[eps ansatzF[[i]]]ms[[i]],{i,Length[ansatzF]}]//Together;
 bmatrix];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.6.2 TCalc*)
 
 
 (* ::Input::Initialization:: *)
 Options[TCalc]:=DeleteCases[Join[Options[checkDegrees],Options[solCalc],Options[FFInvMatMul]]//DeleteDuplicates,"InvertInput"->_];
-TCalc[Am_,ansatzF_,xv_,eps_,OptionsPattern[]]:=Module[{graphvars,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax,tr,i},
+TCalc[Am_,ansatzF_,xv_,eps_,OptionsPattern[]]:=Module[{graphvars,opt,sz,psi1,time,print,degs,phi2,Tm,sol1,bmatrix,timetot,pmax,tr,i,takerow},
 opt = (#[[1]]->OptionValue[#[[1]]])&/@Options[TCalc];
 print=!OptionValue["Silent"];
 
@@ -1727,10 +1736,14 @@ If[sol1===$Failed,Return[$Failed]];
 Print["Full solution not found, returning only partial solution"];Return[sol1]];*)
 
 If[print,Print["Calculating full phi-matrix."]];
-bmatrix=BCalc[sol1,ansatzF,sz,xv,eps,Sequence@@FilterRules[opt,Options[BCalc]]];
+bmatrix=BCalc[sol1,ansatzF,xv,eps,Sequence@@FilterRules[opt,Options[BCalc]]];
 If[bmatrix===$Failed,
 Print["Full solution not found, returning only partial solution"];Return[sol1]];
-phi2=psiCalc[bmatrix,xv,Sequence@@FilterRules[opt,Options[psiCalc]]];
+If[Length[bmatrix]<sz,
+Print["phi-matrix does not have full rank!"]];
+tr=SortBy[tr,#[[1]]&];
+tr[[All,1]]=privateVsPos;(*This is necessary to take the correct rows in case the phi-matrix does not have full rank*)
+phi2=psiCalc[bmatrix,xv,Sequence@@DeleteCases[FilterRules[opt,Options[psiCalc]],("MaxDerivatives"->_)|("TakeRow"->_)],"MaxDerivatives"->sz,"TakeRow"->tr];
 If[bmatrix===$Failed,Return[$Failed]];
 
 If[print,Print["Calculating T-matrix."]];
