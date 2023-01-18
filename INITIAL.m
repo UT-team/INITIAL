@@ -11,8 +11,8 @@ BeginPackage["INITIAL`",{"FiniteFlow`"}];
 (* ::Input::Initialization:: *)
 (*Print["Package for obtaining the transformation matrix to canonical basis"]
 Print["Author: Christoph Dlapa and Kai Yan"];
-Print["Version: 2.0"];
-Print["Last changes: 29.11.2022"];*)
+Print["Version: 2.1"];
+Print["Last changes: 18.01.2023"];*)
 
 
 (* ::Input:: *)
