@@ -1,60 +1,68 @@
-{{((3*x)/16 - (5*eps*x)/8 - (93*eps^2*x)/4 + (245*eps^3*x)/2 - 150*eps^4*x + 
-    (3*x^3)/8 - (11*eps*x^3)/4 - (47*eps^2*x^3)/2 + 155*eps^3*x^3 - 
-    200*eps^4*x^3 + (3*x^5)/16 - (5*eps*x^5)/8 - (93*eps^2*x^5)/4 + 
-    (245*eps^3*x^5)/2 - 150*eps^4*x^5)/(eps^4 - eps^4*x^2 - eps^4*x^4 + 
-    eps^4*x^6), (-2*x*dpsi[1][x]*psi[1][x] + 2*x^5*dpsi[1][x]*psi[1][x] - 
-    psi[1][x]^2/2 - (8*eps*psi[1][x]^2)/3 - x^2*psi[1][x]^2 - 
-    (64*eps*x^2*psi[1][x]^2)/3 + (3*x^4*psi[1][x]^2)/2 - 
-    (8*eps*x^4*psi[1][x]^2)/3)/(eps + eps*x^2), 
-  (1/4 + eps + x^2/2 + x^4/4 + eps*x^4)/(eps^2*x + eps^2*x^3), 
-  (3*x + 6*eps*x)/(eps^2 + eps^2*x^2)}, {0, 1, 0, 0}, 
- {((-3*x^2*dpsi[1][x]*psi[1][x])/8 + (5*eps*x^2*dpsi[1][x]*psi[1][x])/4 + 
-    (93*eps^2*x^2*dpsi[1][x]*psi[1][x])/2 - 245*eps^3*x^2*dpsi[1][x]*
-     psi[1][x] + 300*eps^4*x^2*dpsi[1][x]*psi[1][x] - 
-    (3*x^4*dpsi[1][x]*psi[1][x])/8 + (17*eps*x^4*dpsi[1][x]*psi[1][x])/4 + 
-    (eps^2*x^4*dpsi[1][x]*psi[1][x])/2 - 65*eps^3*x^4*dpsi[1][x]*psi[1][x] + 
-    100*eps^4*x^4*dpsi[1][x]*psi[1][x] + (3*x^6*dpsi[1][x]*psi[1][x])/8 - 
-    (17*eps*x^6*dpsi[1][x]*psi[1][x])/4 - (eps^2*x^6*dpsi[1][x]*psi[1][x])/
-     2 + 65*eps^3*x^6*dpsi[1][x]*psi[1][x] - 100*eps^4*x^6*dpsi[1][x]*
-     psi[1][x] + (3*x^8*dpsi[1][x]*psi[1][x])/8 - 
-    (5*eps*x^8*dpsi[1][x]*psi[1][x])/4 - (93*eps^2*x^8*dpsi[1][x]*psi[1][x])/
-     2 + 245*eps^3*x^8*dpsi[1][x]*psi[1][x] - 300*eps^4*x^8*dpsi[1][x]*
-     psi[1][x] + (eps*x*psi[1][x]^2)/8 + (31*eps^2*x*psi[1][x]^2)/12 - 
-    (123*eps^3*x*psi[1][x]^2)/2 + (785*eps^4*x*psi[1][x]^2)/3 - 
-    300*eps^5*x*psi[1][x]^2 - (3*x^3*psi[1][x]^2)/8 - 
-    (11*eps*x^3*psi[1][x]^2)/8 + (169*eps^2*x^3*psi[1][x]^2)/4 + 
-    (1679*eps^3*x^3*psi[1][x]^2)/6 - 2195*eps^4*x^3*psi[1][x]^2 + 
-    (8900*eps^5*x^3*psi[1][x]^2)/3 - (45*eps*x^5*psi[1][x]^2)/8 + 
-    (167*eps^2*x^5*psi[1][x]^2)/4 + (2069*eps^3*x^5*psi[1][x]^2)/6 - 
-    2295*eps^4*x^5*psi[1][x]^2 + (8900*eps^5*x^5*psi[1][x]^2)/3 + 
-    (3*x^7*psi[1][x]^2)/8 - (9*eps*x^7*psi[1][x]^2)/8 - 
-    (527*eps^2*x^7*psi[1][x]^2)/12 + (367*eps^3*x^7*psi[1][x]^2)/2 - 
-    (115*eps^4*x^7*psi[1][x]^2)/3 - 300*eps^5*x^7*psi[1][x]^2)/
-   (eps^5 - eps^5*x^2 - eps^5*x^4 + eps^5*x^6), 
-  (2*x^2*dpsi[1][x]^2*psi[1][x]^2 - 2*x^4*dpsi[1][x]^2*psi[1][x]^2 - 
-    2*x^6*dpsi[1][x]^2*psi[1][x]^2 + 2*x^8*dpsi[1][x]^2*psi[1][x]^2 + 
-    x*dpsi[1][x]*psi[1][x]^3 + (16*eps*x*dpsi[1][x]*psi[1][x]^3)/3 + 
-    x^3*dpsi[1][x]*psi[1][x]^3 + (112*eps*x^3*dpsi[1][x]*psi[1][x]^3)/3 - 
-    5*x^5*dpsi[1][x]*psi[1][x]^3 - (112*eps*x^5*dpsi[1][x]*psi[1][x]^3)/3 + 
-    3*x^7*dpsi[1][x]*psi[1][x]^3 - (16*eps*x^7*dpsi[1][x]*psi[1][x]^3)/3 - 
-    (eps*psi[1][x]^4)/3 - (14*eps^2*psi[1][x]^4)/9 + x^2*psi[1][x]^4 + 
-    (65*eps*x^2*psi[1][x]^4)/3 + (314*eps^2*x^2*psi[1][x]^4)/3 - 
-    2*x^4*psi[1][x]^4 - (47*eps*x^4*psi[1][x]^4)/3 + 
-    (314*eps^2*x^4*psi[1][x]^4)/3 + x^6*psi[1][x]^4 - 
-    (17*eps*x^6*psi[1][x]^4)/3 - (14*eps^2*x^6*psi[1][x]^4)/9)/
-   (eps^2 + eps^2*x^2), (-1/2*(x*dpsi[1][x]*psi[1][x]) - 
-    2*eps*x*dpsi[1][x]*psi[1][x] - (x^3*dpsi[1][x]*psi[1][x])/2 + 
-    2*eps*x^3*dpsi[1][x]*psi[1][x] + (x^5*dpsi[1][x]*psi[1][x])/2 - 
-    2*eps*x^5*dpsi[1][x]*psi[1][x] + (x^7*dpsi[1][x]*psi[1][x])/2 + 
-    2*eps*x^7*dpsi[1][x]*psi[1][x] + (eps*psi[1][x]^2)/6 + 
-    (2*eps^2*psi[1][x]^2)/3 - (x^2*psi[1][x]^2)/2 - 
-    (11*eps*x^2*psi[1][x]^2)/2 - (34*eps^2*x^2*psi[1][x]^2)/3 - 
-    (15*eps*x^4*psi[1][x]^2)/2 - (34*eps^2*x^4*psi[1][x]^2)/3 + 
-    (x^6*psi[1][x]^2)/2 + (13*eps*x^6*psi[1][x]^2)/6 + 
-    (2*eps^2*x^6*psi[1][x]^2)/3)/(eps^3*x + eps^3*x^3), 
-  (-6*x^2*dpsi[1][x]*psi[1][x] - 12*eps*x^2*dpsi[1][x]*psi[1][x] + 
-    6*x^4*dpsi[1][x]*psi[1][x] + 12*eps*x^4*dpsi[1][x]*psi[1][x] - 
-    3*x*psi[1][x]^2 - 22*eps*x*psi[1][x]^2 - 32*eps^2*x*psi[1][x]^2 + 
-    3*x^3*psi[1][x]^2 - 10*eps*x^3*psi[1][x]^2 - 32*eps^2*x^3*psi[1][x]^2)/
-   (eps^3 + eps^3*x^2)}, {(12*x - 184*eps*x + 720*eps^2*x - 800*eps^3*x)/
-   (eps^3 - eps^3*x^2), 0, 0, 0}}
+{{0, 0, 0, (eps^3/12 - (eps^3*x^2)/12)/(x - (46*eps*x)/3 + 60*eps^2*x - 
+    (200*eps^3*x)/3)}, {0, 1, 0, 0}, 
+ {(8*eps^2*x^2*dpsi[1][x] - 8*eps^2*x^4*dpsi[1][x] + 4*eps^2*x*psi[1][x] + 
+    (64*eps^3*x*psi[1][x])/3 - 4*eps^2*x^3*psi[1][x] + 
+    (64*eps^3*x^3*psi[1][x])/3)/(psi[1][x] + 10*eps*psi[1][x] + 
+    24*eps^2*psi[1][x] - 2*x^2*psi[1][x] - 20*eps*x^2*psi[1][x] - 
+    48*eps^2*x^2*psi[1][x] + x^4*psi[1][x] + 10*eps*x^4*psi[1][x] + 
+    24*eps^2*x^4*psi[1][x]), (8*eps*x^3*dpsi[1][x]^2 - 
+    16*eps*x^5*dpsi[1][x]^2 + 8*eps*x^7*dpsi[1][x]^2 + 
+    8*eps*x^2*dpsi[1][x]*psi[1][x] + (128*eps^2*x^2*dpsi[1][x]*psi[1][x])/3 - 
+    16*eps*x^4*dpsi[1][x]*psi[1][x] + 8*eps*x^6*dpsi[1][x]*psi[1][x] - 
+    (128*eps^2*x^6*dpsi[1][x]*psi[1][x])/3 + 2*eps*x*psi[1][x]^2 + 
+    (68*eps^2*x*psi[1][x]^2)/3 + (568*eps^3*x*psi[1][x]^2)/9 - 
+    4*eps*x^3*psi[1][x]^2 - (8*eps^2*x^3*psi[1][x]^2)/3 + 
+    (272*eps^3*x^3*psi[1][x]^2)/9 + 2*eps*x^5*psi[1][x]^2 - 
+    20*eps^2*x^5*psi[1][x]^2 + (568*eps^3*x^5*psi[1][x]^2)/9)/
+   (1 + 10*eps + 24*eps^2 - 2*x^2 - 20*eps*x^2 - 48*eps^2*x^2 + x^4 + 
+    10*eps*x^4 + 24*eps^2*x^4), (4*eps^3*x)/
+   (psi[1][x]^2 + 10*eps*psi[1][x]^2 + 24*eps^2*psi[1][x]^2 - 
+    2*x^2*psi[1][x]^2 - 20*eps*x^2*psi[1][x]^2 - 48*eps^2*x^2*psi[1][x]^2 + 
+    x^4*psi[1][x]^2 + 10*eps*x^4*psi[1][x]^2 + 24*eps^2*x^4*psi[1][x]^2), 
+  (-1/16*(eps*x) - (9*eps^2*x)/8 - (11*eps^3*x)/2)/
+   (1 + 10*eps + 24*eps^2 - x^2 - 10*eps*x^2 - 24*eps^2*x^2)}, 
+ {((-2*eps^2*x*dpsi[1][x])/3 - (8*eps^3*x*dpsi[1][x])/3 - 
+    (2*eps^2*x^3*dpsi[1][x])/3 + (8*eps^3*x^3*dpsi[1][x])/3 + 
+    (2*eps^2*x^5*dpsi[1][x])/3 - (8*eps^3*x^5*dpsi[1][x])/3 + 
+    (2*eps^2*x^7*dpsi[1][x])/3 + (8*eps^3*x^7*dpsi[1][x])/3 + 
+    (2*eps^3*psi[1][x])/9 + (8*eps^4*psi[1][x])/9 - 
+    (2*eps^2*x^2*psi[1][x])/3 - (22*eps^3*x^2*psi[1][x])/3 - 
+    (136*eps^4*x^2*psi[1][x])/9 - 10*eps^3*x^4*psi[1][x] - 
+    (136*eps^4*x^4*psi[1][x])/9 + (2*eps^2*x^6*psi[1][x])/3 + 
+    (26*eps^3*x^6*psi[1][x])/9 + (8*eps^4*x^6*psi[1][x])/9)/
+   (x*psi[1][x] + 12*eps*x*psi[1][x] + 44*eps^2*x*psi[1][x] + 
+    48*eps^3*x*psi[1][x] - 2*x^3*psi[1][x] - 24*eps*x^3*psi[1][x] - 
+    88*eps^2*x^3*psi[1][x] - 96*eps^3*x^3*psi[1][x] + x^5*psi[1][x] + 
+    12*eps*x^5*psi[1][x] + 44*eps^2*x^5*psi[1][x] + 48*eps^3*x^5*psi[1][x]), 
+  ((-2*eps*x^2*dpsi[1][x]^2)/3 - (8*eps^2*x^2*dpsi[1][x]^2)/3 + 
+    (16*eps^2*x^4*dpsi[1][x]^2)/3 + (4*eps*x^6*dpsi[1][x]^2)/3 - 
+    (16*eps^2*x^6*dpsi[1][x]^2)/3 + (16*eps^2*x^8*dpsi[1][x]^2)/3 - 
+    (2*eps*x^10*dpsi[1][x]^2)/3 - (8*eps^2*x^10*dpsi[1][x]^2)/3 + 
+    (4*eps^2*x*dpsi[1][x]*psi[1][x])/9 + (16*eps^3*x*dpsi[1][x]*psi[1][x])/
+     9 - (4*eps*x^3*dpsi[1][x]*psi[1][x])/3 - 
+    (136*eps^2*x^3*dpsi[1][x]*psi[1][x])/9 - 32*eps^3*x^3*dpsi[1][x]*
+     psi[1][x] + (4*eps*x^5*dpsi[1][x]*psi[1][x])/3 - 
+    (16*eps^2*x^5*dpsi[1][x]*psi[1][x])/3 + (4*eps*x^7*dpsi[1][x]*psi[1][x])/
+     3 + (232*eps^2*x^7*dpsi[1][x]*psi[1][x])/9 + 32*eps^3*x^7*dpsi[1][x]*
+     psi[1][x] - (4*eps*x^9*dpsi[1][x]*psi[1][x])/3 - 
+    (52*eps^2*x^9*dpsi[1][x]*psi[1][x])/9 - 
+    (16*eps^3*x^9*dpsi[1][x]*psi[1][x])/9 + (2*eps^3*psi[1][x]^2)/27 + 
+    (8*eps^4*psi[1][x]^2)/27 + (28*eps^2*x^2*psi[1][x]^2)/9 + 
+    (1112*eps^3*x^2*psi[1][x]^2)/27 + (3184*eps^4*x^2*psi[1][x]^2)/27 - 
+    (2*eps*x^4*psi[1][x]^2)/3 - (212*eps^2*x^4*psi[1][x]^2)/9 - 
+    (1484*eps^3*x^4*psi[1][x]^2)/9 - (9200*eps^4*x^4*psi[1][x]^2)/27 + 
+    (4*eps*x^6*psi[1][x]^2)/3 + (212*eps^2*x^6*psi[1][x]^2)/9 + 
+    (1976*eps^3*x^6*psi[1][x]^2)/27 + (3184*eps^4*x^6*psi[1][x]^2)/27 - 
+    (2*eps*x^8*psi[1][x]^2)/3 - (28*eps^2*x^8*psi[1][x]^2)/9 - 
+    (46*eps^3*x^8*psi[1][x]^2)/27 + (8*eps^4*x^8*psi[1][x]^2)/27)/
+   (x + 12*eps*x + 44*eps^2*x + 48*eps^3*x - 2*x^3 - 24*eps*x^3 - 
+    88*eps^2*x^3 - 96*eps^3*x^3 + x^5 + 12*eps*x^5 + 44*eps^2*x^5 + 
+    48*eps^3*x^5), (-1/3*eps^3 - (4*eps^4)/3 - (2*eps^3*x^2)/3 - 
+    (eps^3*x^4)/3 - (4*eps^4*x^4)/3)/(x*psi[1][x]^2 + 12*eps*x*psi[1][x]^2 + 
+    44*eps^2*x*psi[1][x]^2 + 48*eps^3*x*psi[1][x]^2 - 2*x^3*psi[1][x]^2 - 
+    24*eps*x^3*psi[1][x]^2 - 88*eps^2*x^3*psi[1][x]^2 - 
+    96*eps^3*x^3*psi[1][x]^2 + x^5*psi[1][x]^2 + 12*eps*x^5*psi[1][x]^2 + 
+    44*eps^2*x^5*psi[1][x]^2 + 48*eps^3*x^5*psi[1][x]^2), 
+  (eps^3/12 + eps^4/3 - (eps^3*x^2)/6 - 2*eps^4*x^2 + (eps^3*x^4)/12 + 
+    (eps^4*x^4)/3)/(x + 12*eps*x + 44*eps^2*x + 48*eps^3*x - x^3 - 
+    12*eps*x^3 - 44*eps^2*x^3 - 48*eps^3*x^3)}}

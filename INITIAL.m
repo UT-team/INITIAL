@@ -1596,7 +1596,7 @@ denominators[amatrix_,xv_,eps_]:=Select[denominators[amatrix,xv],FreeQ[{#},eps,I
 (*1.6 Combining everything into one function*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.6.1 BCalc*)
 
 
@@ -1633,7 +1633,7 @@ Print["Relations missing."];Return[$Failed]];
 QMvs=Cases[ts,T[_]]//Union;
 ts=Complement[ts,QMvs];
 privateVsPos={};
-Do[insertPos=If[QMvs[[i,1,1]]<=Length[ts],QMvs[[i,1,1]],
+Do[insertPos=If[QMvs[[i,1,1]]<=(Length[ts]+1),QMvs[[i,1,1]],
 Print["phi-matrix will not have full rank -> integral ",QMvs[[i,1,1]]," sorted to position ",Length[ts]+1];
 Length[ts]+1];
 ts=Insert[ts,QMvs[[i]],insertPos];
@@ -1741,8 +1741,7 @@ If[bmatrix===$Failed,
 Print["Full solution not found, returning only partial solution"];Return[sol1]];
 If[Length[bmatrix]<sz,
 Print["phi-matrix does not have full rank!"]];
-tr=SortBy[tr,#[[1]]&];
-tr[[All,1]]=privateVsPos;(*This is necessary to take the correct rows in case the phi-matrix does not have full rank*)
+tr[[Ordering[tr[[All,1]]],1]]=privateVsPos;(*This is necessary to take the correct rows in case the phi-matrix does not have full rank*)
 phi2=psiCalc[bmatrix,xv,Sequence@@DeleteCases[FilterRules[opt,Options[psiCalc]],("MaxDerivatives"->_)|("TakeRow"->_)],"MaxDerivatives"->sz,"TakeRow"->tr];
 If[bmatrix===$Failed,Return[$Failed]];
 
