@@ -109,7 +109,7 @@ FFInvMatMul[mat1,mat2,...,\"LaurentExpand\"->{eps,order}] laurent expands the re
 
 (* ::Input::Initialization:: *)
 basisChange::usage="\
-basisChange[AMatrix,TMatrix,x] uses FiniteFlow to compute the basis change given through \"TMatrix\" of the differential equation given through \"AMatrix\"."
+basisChange[AMatrix,TMatrix,x] uses FiniteFlow to compute the basis change given through \"TMatrix\" of the differential equation given through \"AMatrix\", i.e. it computes Inverse[TMatrix].(AMatrix.TMatrix-D[TMatrix,x])."
 
 
 (* ::Input::Initialization:: *)
@@ -1221,7 +1221,7 @@ equs];
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*1.4.3 Solve the Equation*)
 
 
@@ -1513,7 +1513,7 @@ If[LEQ,FFDeleteGraph[LaurentGraph]];
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*1.5.2 basisChange*)
 
 
@@ -1549,20 +1549,20 @@ If[learn===FFImpossible,Message[nthO::singmatrix];Return[$Failed]];
 
 (*Now compute the derivatives*)
 {pA,qA}=Transpose[NumeratorDenominator[Flatten[Tmatrix]]];
-der1=D[pA,xv]/qA;
+der1=-D[pA,xv]/qA;
 
 FFAlgRatFunEval[Tgraph,Anode,{input},graphvars,Flatten[amatrix]];
 FFAlgRatFunEval[Tgraph,derNode1,{input},graphvars,der1];
 (*time=SessionTime[];*)
 FFAlgRatFunEval[Tgraph,derNode21,{input},graphvars,1/qA];
-FFAlgRatFunEval[Tgraph,derNode22,{input},graphvars,-pA];
+FFAlgRatFunEval[Tgraph,derNode22,{input},graphvars,pA];
 FFAlgRatFunEval[Tgraph,derNode23,{input},graphvars,D[qA,xv]];
 FFAlgMul[Tgraph,derNode2,{derNode21,derNode21,derNode22,derNode23}];
 
 (*Now do the matrix multiplication and add with the derivative*)
-FFAlgMatMul[Tgraph,TAnode,{psinode,Anode},sz,sz,sz];
+FFAlgMatMul[Tgraph,TAnode,{Anode,psinode},sz,sz,sz];
 FFAlgAdd[Tgraph,AddNode,{derNode1,derNode2,TAnode}];
-FFAlgMatMul[Tgraph,outnode,{AddNode,psiInvnode},sz,sz,sz];
+FFAlgMatMul[Tgraph,outnode,{psiInvnode,AddNode},sz,sz,sz];
 
 FFGraphOutput[Tgraph,outnode];
 atest=FFReconstructFunction[Tgraph,graphvars,Sequence@@FilterRules[opt,Options[FFReconstructFunction]]];
@@ -1735,7 +1735,7 @@ If[bmatrix===$Failed,Return[$Failed]];
 
 If[print,Print["Calculating T-matrix."]];
 time=SessionTime[];
-Tm=FFInvMatMul[phi2,psi1,Sequence@@FilterRules[Join[{"InvertInput"->1},opt],Options[FFInvMatMul]]];
+Tm=FFInvMatMul[psi1,phi2,Sequence@@FilterRules[Join[{"InvertInput"->1},opt],Options[FFInvMatMul]]];
 If[print,Print[ToString[SetAccuracy[SessionTime[]-time,3]]," s"]];
 If[Tm===$Failed,Return[$Failed]];
 If[print,Print["Done"]];
